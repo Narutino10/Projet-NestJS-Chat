@@ -2,12 +2,26 @@ import {
   WebSocketGateway,
   SubscribeMessage,
   MessageBody,
-  ConnectedSocket,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  WebSocketServer,
+  ConnectedSocket,
 } from '@nestjs/websockets';
-import { Socket, Server } from 'socket.io';
-import { WebSocketServer } from '@nestjs/websockets';
+import { UseGuards } from '@nestjs/common';
+import { Server, Socket } from 'socket.io';
+import { WsGuard } from '../auth/ws.guard';
+
+interface JwtPayload {
+  id: string;
+  email: string;
+  username: string;
+}
+
+interface SafeSocket extends Socket {
+  data: {
+    user: JwtPayload;
+  };
+}
 
 @WebSocketGateway({
   cors: {
@@ -16,23 +30,43 @@ import { WebSocketServer } from '@nestjs/websockets';
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
+  private _server!: Server;
 
-  handleConnection(client: Socket): void {
+  private get server(): Server {
+    return this._server;
+  }
+
+  handleConnection(client: SafeSocket): void {
     console.log(`Client connected: ${client.id}`);
   }
 
-  handleDisconnect(client: Socket): void {
+  handleDisconnect(client: SafeSocket): void {
     console.log(`Client disconnected: ${client.id}`);
   }
 
+  @UseGuards(WsGuard)
   @SubscribeMessage('message')
   handleMessage(
+    @ConnectedSocket() client: SafeSocket,
     @MessageBody()
-    data: { sender: string; message: string; color: string },
-    @ConnectedSocket() client: Socket,
+    data: {
+      message: string;
+      color: string;
+    },
   ): void {
-    console.log(`Message from ${data.sender}: ${data.message}`);
-    this.server.emit('message', data); // diffuse à tous les clients connectés
+    const user: JwtPayload = client.data.user;
+
+    if (!user) {
+      console.warn('No user attached to client data');
+      return;
+    }
+
+    console.log(`Message from ${user.username}: ${data.message}`);
+
+    this.server.emit('message', {
+      sender: user.username,
+      message: data.message,
+      color: data.color,
+    });
   }
 }
