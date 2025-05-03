@@ -7,20 +7,14 @@ import {
   WebSocketServer,
   ConnectedSocket,
 } from '@nestjs/websockets';
-import { UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
+import { UseGuards } from '@nestjs/common';
 import { WsGuard } from '../auth/ws.guard';
 
-interface JwtPayload {
+interface UserPayload {
   id: string;
   email: string;
   username: string;
-}
-
-interface SafeSocket extends Socket {
-  data: {
-    user: JwtPayload;
-  };
 }
 
 @WebSocketGateway({
@@ -36,37 +30,50 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return this._server;
   }
 
-  handleConnection(client: SafeSocket): void {
-    console.log(`Client connected: ${client.id}`);
+  private connectedUsers = new Map<string, string>();
+
+  handleConnection(client: Socket): void {
+    const user = (client.data as { user: UserPayload }).user;
+    if (user && user.username) {
+      this.connectedUsers.set(client.id, user.username);
+      this.broadcastUsers();
+      console.log(`Client connected: ${client.id} (${user.username})`);
+    }
   }
 
-  handleDisconnect(client: SafeSocket): void {
-    console.log(`Client disconnected: ${client.id}`);
+  handleDisconnect(client: Socket): void {
+    const user = (client.data as { user: UserPayload }).user;
+    if (user && user.username) {
+      this.connectedUsers.delete(client.id);
+      this.broadcastUsers();
+      console.log(`Client disconnected: ${client.id} (${user.username})`);
+    }
+  }
+
+  private broadcastUsers(): void {
+    const users = Array.from(this.connectedUsers.values());
+    this.server.emit('users', users);
   }
 
   @UseGuards(WsGuard)
   @SubscribeMessage('message')
   handleMessage(
-    @ConnectedSocket() client: SafeSocket,
+    @ConnectedSocket() client: Socket,
     @MessageBody()
     data: {
       message: string;
       color: string;
     },
   ): void {
-    const user: JwtPayload = client.data.user;
+    const user = (client.data as { user: UserPayload }).user;
+    if (user && user.username) {
+      console.log(`Message from ${user.username}: ${data.message}`);
 
-    if (!user) {
-      console.warn('No user attached to client data');
-      return;
+      this.server.emit('message', {
+        sender: user.username,
+        message: data.message,
+        color: data.color,
+      });
     }
-
-    console.log(`Message from ${user.username}: ${data.message}`);
-
-    this.server.emit('message', {
-      sender: user.username,
-      message: data.message,
-      color: data.color,
-    });
   }
 }

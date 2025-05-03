@@ -1,24 +1,5 @@
 .chat-input {
     display: flex;
-  
-    input {
-      flex: 1;
-      padding: 0.5rem;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-  
-    button {
-      margin-left: 0.5rem;
-      padding: 0.5rem 1rem;
-      background: #007bff;
-      border: none;
-      color: white;
-      border-radius: 4px;
-  
-      &:hover {
-        background: #0056b3;
-      }
-    }
+    gap: 0.5rem;
   }
   

@@ -1,32 +1,26 @@
 import React, { useState } from 'react';
-import '../styles/ChatInput.scss';
+import './ChatInput.scss';
 
 interface Props {
   onSend: (msg: string) => void;
 }
 
-function ChatInput({ onSend }: Props) {
-  const [input, setInput] = useState('');
+const ChatInput: React.FC<Props> = ({ onSend }) => {
+  const [message, setMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (input.trim()) {
-      onSend(input);
-      setInput('');
+  const handleSend = () => {
+    if (message.trim()) {
+      onSend(message);
+      setMessage('');
     }
   };
 
   return (
-    <form className="chat-input" onSubmit={handleSubmit}>
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Type a message..."
-      />
-      <button type="submit">Send</button>
-    </form>
+    <div className="chat-input">
+      <input value={message} onChange={(e) => setMessage(e.target.value)} />
+      <button onClick={handleSend}>Send</button>
+    </div>
   );
-}
+};
 
 export default ChatInput;
