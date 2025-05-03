@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { User } from './users/user.entity';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { User } from './users/user.entity';
     TypeOrmModule.forFeature([User]),
     UsersModule,
     AuthModule,
+    ChatModule,
   ],
 })
 export class AppModule {}
