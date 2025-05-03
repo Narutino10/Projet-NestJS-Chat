@@ -1,5 +1,5 @@
 import React from 'react';
-import './MessageBubble.scss';
+import '../styles/MessageBubble.scss';
 
 interface Props {
   sender: string;

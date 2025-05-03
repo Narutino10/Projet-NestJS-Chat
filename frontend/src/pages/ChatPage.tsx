@@ -3,7 +3,7 @@ import io, { Socket } from 'socket.io-client';
 import ChatInput from '../components/ChatInput';
 import MessageBubble from '../components/MessageBubble';
 import UserList from '../components/UserList';
-import './ChatPage.scss';
+import '../styles/ChatPage.scss';
 
 interface Message {
   sender: string;

@@ -11,6 +11,9 @@ export class User {
   @Column()
   password: string;
 
+  @Column()
+  username: string;
+
   @Column({ default: '#000000' })
   color: string;
 }

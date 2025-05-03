@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import './ChatInput.scss';
-
+import '../styles/ChatInput.scss'; 
 interface Props {
   onSend: (msg: string) => void;
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import './UserList.scss';
+import '../styles/UserList.scss';
 
 interface UserListProps {
   users: string[];

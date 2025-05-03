@@ -1,5 +1,5 @@
 import React from 'react';
-import './RegisterPage.scss';
+import '../styles/RegisterPage.scss';
 
 const RegisterPage = () => {
   return (
