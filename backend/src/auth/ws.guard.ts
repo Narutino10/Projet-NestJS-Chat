@@ -32,12 +32,17 @@ export class WsGuard implements CanActivate {
     }
 
     try {
-      const payload: JwtPayload = this.jwtService.verify<JwtPayload>(token);
+      const payload: JwtPayload = this.jwtService.verify<JwtPayload>(token, {
+        secret: 'supersecret',
+      });
+
       console.log('✅ [WsGuard] Payload JWT décodé :', payload);
+
       client.data = {
         ...(client.data as Record<string, unknown>),
         user: payload,
       };
+
       return true;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
