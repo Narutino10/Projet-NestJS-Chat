@@ -19,11 +19,21 @@ const LoginPage: React.FC = () => {
     if (res.ok) {
       const data = await res.json();
       localStorage.setItem('token', data.access_token);
-      alert('Login successful!');
+      
+      // On décode le JWT pour extraire le username
+      const base64Url = data.access_token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const decodedPayload = JSON.parse(atob(base64));
+      const username = decodedPayload.username;
+    
+      localStorage.setItem('username', username);
+      
+      alert(`Login successful! Bienvenue ${username}`);
       navigate('/chat');
     } else {
       alert('Login failed. Please check your credentials.');
     }
+    
   };
 
   return (

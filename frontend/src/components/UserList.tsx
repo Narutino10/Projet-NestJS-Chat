@@ -2,27 +2,43 @@ import React from 'react';
 import '../styles/UserList.scss';
 
 interface User {
-  id: string;
   username: string;
+  status: string; // 'online' ou 'offline'
 }
 
 interface UserListProps {
   users: User[];
   onSendPrivate: (username: string) => void;
+  newPrivateMessageFrom: string | null;
+  currentUsername: string | null;
 }
 
-const UserList: React.FC<UserListProps> = ({ users, onSendPrivate }) => {
+const UserList: React.FC<UserListProps> = ({
+  users,
+  onSendPrivate,
+  newPrivateMessageFrom,
+  currentUsername,
+}) => {
   return (
     <div className="user-list">
-      <h3>Utilisateurs en ligne</h3>
+      <h3>Utilisateurs</h3>
       {users.length === 0 ? (
-        <p>Aucun utilisateur en ligne</p>
+        <p>Aucun utilisateur enregistré</p>
       ) : (
         <ul>
-          {users.map((user) => (
-            <li key={user.id}>
-              {user.username}
-              <button onClick={() => onSendPrivate(user.username)}>DM</button>
+          {users.map((user, index) => (
+            <li key={index} className={user.status}>
+              <span className={`status-dot ${user.status === 'online' ? 'online' : 'offline'}`} />
+              {user.username === currentUsername ? 'Moi' : user.username}
+              {newPrivateMessageFrom === user.username && (
+                <span className="badge">Nouveau</span>
+              )}
+              <button
+                onClick={() => onSendPrivate(user.username)}
+                disabled={user.status !== 'online'}
+              >
+                DM
+              </button>
             </li>
           ))}
         </ul>

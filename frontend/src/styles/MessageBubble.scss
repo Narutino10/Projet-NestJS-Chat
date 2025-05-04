@@ -1,36 +1,23 @@
 .message-bubble {
-  margin: 10px;
-  max-width: 70%;
-  padding: 8px;
+  max-width: 60%;
+  margin: 0.5rem 0;
+  padding: 0.6rem 1rem;
   border-radius: 12px;
-  font-size: 14px;
+  background-color: #e0e0e0;
+  word-wrap: break-word;
 
-  &.own {
+  &.me {
+    background-color: #a8d0e6;
     align-self: flex-end;
-    background-color: #d0f0fd;
-    text-align: right;
   }
 
-  &.other {
-    align-self: flex-start;
-    background-color: #f1f1f1;
-    text-align: left;
-  }
-
-  .bubble-header {
+  .sender {
+    font-size: 0.75rem;
     font-weight: bold;
-    font-size: 12px;
-    margin-bottom: 4px;
-
-    .timestamp {
-      margin-left: 10px;
-      font-size: 10px;
-      color: #888;
-    }
+    margin-bottom: 0.3rem;
   }
 
-  .bubble-content {
-    padding: 6px;
-    border-radius: 8px;
+  .content {
+    font-size: 0.9rem;
   }
 }
