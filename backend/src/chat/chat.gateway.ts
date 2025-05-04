@@ -83,9 +83,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   private broadcastUsers(room: string): void {
-    const usersInRoom = Array.from(this.connectedUsers.values())
-      .filter((u) => u.room === room)
-      .map((u) => ({ username: u.username }));
+    const usersInRoom = Array.from(this.connectedUsers.entries())
+      .filter(([, u]) => u.room === room)
+      .map(([id, u]) => ({ id, username: u.username }));
 
     this.logger.log(
       `📡 Envoi des utilisateurs room "${room}" : ${JSON.stringify(usersInRoom)}`,
@@ -140,6 +140,47 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
     } else {
       this.logger.warn(`Message sans utilisateur identifié`);
+    }
+  }
+
+  @UseGuards(WsGuard)
+  @SubscribeMessage('privateMessage')
+  handlePrivateMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    data: { receiverUsername: string; message: string; color: string },
+  ): void {
+    const user = (client.data as { user?: UserPayload }).user;
+    if (user && user.username) {
+      const receiverEntry = Array.from(this.connectedUsers.entries()).find(
+        ([, u]) => u.username === data.receiverUsername,
+      );
+
+      if (receiverEntry) {
+        const [receiverSocketId] = receiverEntry;
+        this.logger.log(
+          `💌 Message privé de ${user.username} à ${data.receiverUsername}: ${data.message}`,
+        );
+
+        this.server.to(receiverSocketId).emit('privateMessage', {
+          sender: user.username,
+          message: data.message,
+          color: data.color,
+          timestamp: new Date().toISOString(),
+        });
+
+        client.emit('privateMessage', {
+          sender: user.username,
+          message: data.message,
+          color: data.color,
+          timestamp: new Date().toISOString(),
+          to: data.receiverUsername,
+        });
+      } else {
+        this.logger.warn(
+          `⚠️ Utilisateur ${data.receiverUsername} introuvable pour DM`,
+        );
+      }
     }
   }
 

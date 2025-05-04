@@ -11,6 +11,7 @@ interface Message {
   message: string;
   color: string;
   timestamp: string;
+  to?: string;
 }
 
 interface User {
@@ -22,6 +23,7 @@ const ChatPage: React.FC = () => {
   const navigate = useNavigate();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [privateMessages, setPrivateMessages] = useState<Message[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [typingUser, setTypingUser] = useState<string | null>(null);
   const [room, setRoom] = useState<string>('general');
@@ -52,6 +54,12 @@ const ChatPage: React.FC = () => {
       console.log('📩 Nouveau message reçu :', msg);
       playNotificationSound();
       setMessages((prev) => [...prev, msg]);
+    });
+
+    newSocket.on('privateMessage', (msg: Message) => {
+      console.log('💌 Message privé reçu :', msg);
+      playNotificationSound();
+      setPrivateMessages((prev) => [...prev, msg]);
     });
 
     newSocket.on('users', (userList: User[]) => {
@@ -98,6 +106,17 @@ const ChatPage: React.FC = () => {
     }
   };
 
+  const handleSendPrivate = (username: string) => {
+    const msg = prompt(`Message privé à ${username}:`);
+    if (msg && socket) {
+      socket.emit('privateMessage', {
+        receiverUsername: username,
+        message: msg,
+        color: 'purple',
+      });
+    }
+  };
+
   const handleRoomChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newRoom = e.target.value;
     setRoom(newRoom);
@@ -116,7 +135,7 @@ const ChatPage: React.FC = () => {
           <option value="sport">Sport</option>
           <option value="musique">Musique</option>
         </select>
-        <UserList users={users} />
+        <UserList users={users} onSendPrivate={handleSendPrivate} />
       </div>
       <div className="chat-area">
         <div className="messages">
@@ -132,6 +151,17 @@ const ChatPage: React.FC = () => {
                 />
               )}
             </div>
+          ))}
+        </div>
+        <h4>Messages privés</h4>
+        <div className="private-messages">
+          {privateMessages.map((m, index) => (
+            <MessageBubble
+              key={`pm-${index}`}
+              sender={`[DM] ${m.sender}${m.to ? ` → ${m.to}` : ''}`}
+              message={m.message}
+              color={m.color}
+            />
           ))}
         </div>
         <ChatInput onSend={handleSend} onTyping={handleTyping} />
