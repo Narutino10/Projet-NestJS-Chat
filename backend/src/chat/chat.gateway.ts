@@ -51,7 +51,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   private broadcastUsers(): void {
-    const users = Array.from(this.connectedUsers.values());
+    const users = Array.from(this.connectedUsers.entries()).map(
+      ([id, username]) => ({
+        id,
+        username,
+      }),
+    );
     this.server.emit('users', users);
   }
 

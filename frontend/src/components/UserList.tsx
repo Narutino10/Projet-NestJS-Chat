@@ -1,17 +1,22 @@
 import React from 'react';
 import '../styles/UserList.scss';
 
+interface User {
+  id: string;
+  username: string;
+}
+
 interface UserListProps {
-  users: string[];
+  users: User[];
 }
 
 const UserList: React.FC<UserListProps> = ({ users }) => {
   return (
     <div className="user-list">
-      <h3>Online Users</h3>
+      <h3>Utilisateurs en ligne</h3>
       <ul>
         {users.map((user) => (
-          <li key={user}>{user}</li>
+          <li key={user.id}>{user.username}</li>
         ))}
       </ul>
     </div>

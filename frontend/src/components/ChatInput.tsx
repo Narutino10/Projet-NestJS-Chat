@@ -17,7 +17,7 @@ const ChatInput: React.FC<Props> = ({ onSend }) => {
   return (
     <div className="chat-input">
       <input value={message} onChange={(e) => setMessage(e.target.value)} />
-      <button onClick={handleSend}>Send</button>
+      <button onClick={handleSend}>Envoyer</button>
     </div>
   );
 };

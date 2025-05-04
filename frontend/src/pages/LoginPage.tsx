@@ -44,7 +44,7 @@ const LoginPage: React.FC = () => {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button type="submit">Log In</button>
+        <button type="submit">Se connecter</button>
       </form>
     </div>
   );

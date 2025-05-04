@@ -7,7 +7,6 @@ interface JwtPayload {
   id: string;
   email: string;
   username: string;
-  // ajoute ici tout ce que tu stockes dans le payload
 }
 
 @Injectable()

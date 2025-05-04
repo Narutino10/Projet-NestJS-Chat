@@ -12,16 +12,21 @@ interface Message {
   color: string;
 }
 
+interface User {
+  id: string;
+  username: string;
+}
+
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [users, setUsers] = useState<string[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      alert('You must log in first.');
+      alert('Vous devez vous connecter d’abord.');
       navigate('/login');
       return;
     }
@@ -36,7 +41,7 @@ const ChatPage: React.FC = () => {
       setMessages((prev) => [...prev, msg]);
     });
 
-    newSocket.on('users', (userList: string[]) => {
+    newSocket.on('users', (userList: User[]) => {
       setUsers(userList);
     });
 

@@ -1,5 +1,26 @@
 .user-list {
-    width: 200px;
-    padding: 1rem;
+  background-color: #f0f0f0;
+  padding: 1rem;
+  border-right: 2px solid #ccc;
+  height: 100%;
+  overflow-y: auto;
+
+  h3 {
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    color: #333;
   }
-  
+
+  ul {
+    list-style: none;
+    padding: 0;
+
+    li {
+      margin-bottom: 0.5rem;
+      padding: 0.3rem 0.5rem;
+      border-radius: 4px;
+      background-color: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+  }
+}
