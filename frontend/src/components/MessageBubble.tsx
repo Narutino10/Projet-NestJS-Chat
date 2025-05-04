@@ -1,16 +1,18 @@
 import React from 'react';
 import '../styles/MessageBubble.scss';
 
-interface Props {
+interface MessageBubbleProps {
   sender: string;
   message: string;
   color: string;
 }
 
-const MessageBubble: React.FC<Props> = ({ sender, message, color }) => (
-  <div className="message-bubble" style={{ borderLeft: `4px solid ${color}` }}>
-    <strong>{sender}:</strong> {message}
-  </div>
-);
+const MessageBubble: React.FC<MessageBubbleProps> = ({ sender, message, color }) => {
+  return (
+    <div className="message-bubble" style={{ borderColor: color }}>
+      <strong>{sender} :</strong> <span>{message}</span>
+    </div>
+  );
+};
 
 export default MessageBubble;

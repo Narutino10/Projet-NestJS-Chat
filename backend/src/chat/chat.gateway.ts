@@ -1,3 +1,4 @@
+// ✅ ChatGateway complet et prêt à coller
 import {
   WebSocketGateway,
   SubscribeMessage,
@@ -18,6 +19,12 @@ interface UserPayload {
   username: string;
 }
 
+interface IncomingMessage {
+  message: string;
+  color: string;
+  timestamp: string;
+}
+
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -25,17 +32,12 @@ interface UserPayload {
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  private readonly _server!: Server;
+  private readonly server!: Server;
 
   private readonly logger = new Logger(ChatGateway.name);
-
   private connectedUsers = new Map<string, string>();
 
   constructor(private readonly jwtService: JwtService) {}
-
-  private get server(): Server {
-    return this._server;
-  }
 
   handleConnection(client: Socket): void {
     this.logger.log(`Tentative de connexion : ${client.id}`);
@@ -86,11 +88,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('message')
   handleMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody()
-    data: {
-      message: string;
-      color: string;
-    },
+    @MessageBody() data: IncomingMessage,
   ): void {
     const user = (client.data as { user?: UserPayload }).user;
     if (user && user.username) {
@@ -99,9 +97,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         sender: user.username,
         message: data.message,
         color: data.color,
+        timestamp: data.timestamp,
       });
     } else {
       this.logger.warn(`Message sans utilisateur identifié`);
+    }
+  }
+
+  @UseGuards(WsGuard)
+  @SubscribeMessage('typing')
+  handleTyping(@ConnectedSocket() client: Socket): void {
+    const user = (client.data as { user?: UserPayload }).user;
+    if (user && user.username) {
+      this.logger.log(`✏️ ${user.username} est en train d'écrire...`);
+      client.broadcast.emit('typing', {
+        username: user.username,
+      });
     }
   }
 }

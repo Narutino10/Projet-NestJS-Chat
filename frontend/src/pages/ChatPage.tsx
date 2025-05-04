@@ -22,6 +22,15 @@ const ChatPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [typingUser, setTypingUser] = useState<string | null>(null);
+  
+  
+  const handleTyping = () => {
+    if (socket) {
+      socket.emit('typing');
+    }
+  };
+  
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -31,12 +40,12 @@ const ChatPage: React.FC = () => {
       return;
     }
 
-    const newSocket: Socket = io('http://localhost:3000', {
+    const newSocket = io('http://localhost:3000', {
       auth: { token },
     });
 
     newSocket.on('connect', () => {
-      console.log('✅ Connecté au serveur WebSocket (id :', newSocket.id, ')');
+      console.log('✅ Connecté au serveur WebSocket');
     });
 
     newSocket.on('message', (msg: Message) => {
@@ -48,6 +57,16 @@ const ChatPage: React.FC = () => {
       console.log('👥 Liste des utilisateurs reçue :', userList);
       setUsers(userList);
     });
+
+    newSocket.on('typing', (data: { username: string }) => {
+      console.log('✏️ Utilisateur en train d’écrire :', data.username);
+      setTypingUser(data.username);
+    
+      setTimeout(() => {
+        setTypingUser(null);
+      }, 3000);
+    });
+    
 
     newSocket.on('disconnect', () => {
       console.warn('⚠️ Déconnecté du serveur WebSocket');
@@ -74,12 +93,7 @@ const ChatPage: React.FC = () => {
   return (
     <div className="chat-page">
       <div className="sidebar">
-        <h3>Utilisateurs en ligne</h3>
-        {users.length === 0 ? (
-          <p>Aucun utilisateur en ligne</p>
-        ) : (
-          <UserList users={users} />
-        )}
+        <UserList users={users} />
       </div>
       <div className="chat-area">
         <div className="messages">
@@ -87,8 +101,13 @@ const ChatPage: React.FC = () => {
             <MessageBubble key={index} sender={m.sender} message={m.message} color={m.color} />
           ))}
         </div>
-        <ChatInput onSend={handleSend} />
-      </div>
+        <ChatInput onSend={handleSend} onTyping={handleTyping} />
+        {typingUser && (
+          <div className="typing-indicator">
+            <p>{typingUser} est en train d’écrire...</p>
+          </div>
+        )}
+        </div>
     </div>
   );
 };
