@@ -10,6 +10,7 @@ interface Message {
   sender: string;
   message: string;
   color: string;
+  timestamp: string;
 }
 
 interface User {
@@ -19,18 +20,16 @@ interface User {
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [typingUser, setTypingUser] = useState<string | null>(null);
-  
-  
-  const handleTyping = () => {
-    if (socket) {
-      socket.emit('typing');
-    }
+  const [room, setRoom] = useState<string>('general');
+
+  const playNotificationSound = () => {
+    const audio = new Audio('/notification.mp3');
+    audio.play().catch((err) => console.error('Erreur lecture son:', err));
   };
-  
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -46,10 +45,12 @@ const ChatPage: React.FC = () => {
 
     newSocket.on('connect', () => {
       console.log('✅ Connecté au serveur WebSocket');
+      newSocket.emit('joinRoom', { room });
     });
 
     newSocket.on('message', (msg: Message) => {
       console.log('📩 Nouveau message reçu :', msg);
+      playNotificationSound();
       setMessages((prev) => [...prev, msg]);
     });
 
@@ -61,12 +62,8 @@ const ChatPage: React.FC = () => {
     newSocket.on('typing', (data: { username: string }) => {
       console.log('✏️ Utilisateur en train d’écrire :', data.username);
       setTypingUser(data.username);
-    
-      setTimeout(() => {
-        setTypingUser(null);
-      }, 3000);
+      setTimeout(() => setTypingUser(null), 3000);
     });
-    
 
     newSocket.on('disconnect', () => {
       console.warn('⚠️ Déconnecté du serveur WebSocket');
@@ -81,24 +78,60 @@ const ChatPage: React.FC = () => {
     return () => {
       newSocket.disconnect();
     };
-  }, [navigate]);
+  }, [navigate, room]);
 
   const handleSend = (msg: string) => {
     if (socket) {
       console.log('✉️ Envoi du message :', msg);
-      socket.emit('message', { message: msg, color: 'blue' });
+      socket.emit('message', {
+        room,
+        message: msg,
+        color: 'blue',
+        timestamp: new Date().toISOString(),
+      });
+    }
+  };
+
+  const handleTyping = () => {
+    if (socket) {
+      socket.emit('typing', { room });
+    }
+  };
+
+  const handleRoomChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newRoom = e.target.value;
+    setRoom(newRoom);
+    setMessages([]);
+    if (socket) {
+      socket.emit('joinRoom', { room: newRoom });
     }
   };
 
   return (
     <div className="chat-page">
       <div className="sidebar">
+        <h3>Choisir une room</h3>
+        <select value={room} onChange={handleRoomChange}>
+          <option value="general">Général</option>
+          <option value="sport">Sport</option>
+          <option value="musique">Musique</option>
+        </select>
         <UserList users={users} />
       </div>
       <div className="chat-area">
         <div className="messages">
           {messages.map((m, index) => (
-            <MessageBubble key={index} sender={m.sender} message={m.message} color={m.color} />
+            <div key={index}>
+              {m.sender === 'System' ? (
+                <div className="system-message">{m.message}</div>
+              ) : (
+                <MessageBubble
+                  sender={`${m.sender} (${new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`}
+                  message={m.message}
+                  color={m.color}
+                />
+              )}
+            </div>
           ))}
         </div>
         <ChatInput onSend={handleSend} onTyping={handleTyping} />
@@ -107,7 +140,7 @@ const ChatPage: React.FC = () => {
             <p>{typingUser} est en train d’écrire...</p>
           </div>
         )}
-        </div>
+      </div>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-// ✅ ChatGateway complet et prêt à coller
 import {
   WebSocketGateway,
   SubscribeMessage,
@@ -20,9 +19,10 @@ interface UserPayload {
 }
 
 interface IncomingMessage {
+  room: string;
   message: string;
   color: string;
-  timestamp: string;
+  timestamp?: string;
 }
 
 @WebSocketGateway({
@@ -35,7 +35,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly server!: Server;
 
   private readonly logger = new Logger(ChatGateway.name);
-  private connectedUsers = new Map<string, string>();
+  private connectedUsers = new Map<
+    string,
+    { username: string; room: string }
+  >();
 
   constructor(private readonly jwtService: JwtService) {}
 
@@ -53,9 +56,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const payload = this.jwtService.verify<UserPayload>(token);
       (client.data as { user?: UserPayload }).user = payload;
 
-      this.connectedUsers.set(client.id, payload.username);
       this.logger.log(`✅ Connecté : ${client.id} (${payload.username})`);
-      this.broadcastUsers();
     } catch {
       this.logger.warn(`❌ Token invalide`);
       client.disconnect();
@@ -63,25 +64,59 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket): void {
-    const user = (client.data as { user?: UserPayload }).user;
-    if (user && user.username) {
+    const userEntry = this.connectedUsers.get(client.id);
+    if (userEntry) {
+      const { username, room } = userEntry;
       this.connectedUsers.delete(client.id);
-      this.logger.log(`❌ Déconnecté : ${client.id} (${user.username})`);
-      this.broadcastUsers();
+      this.logger.log(
+        `❌ Déconnecté : ${client.id} (${username}) de la room ${room}`,
+      );
+      this.broadcastUsers(room);
+      this.server.to(room).emit('message', {
+        sender: 'System',
+        message: `${username} a quitté la room.`,
+        color: 'gray',
+      });
     } else {
       this.logger.warn(`Déconnexion inconnue : ${client.id}`);
     }
   }
 
-  private broadcastUsers(): void {
-    const users = Array.from(this.connectedUsers.entries()).map(
-      ([id, username]) => ({
-        id,
-        username,
-      }),
+  private broadcastUsers(room: string): void {
+    const usersInRoom = Array.from(this.connectedUsers.values())
+      .filter((u) => u.room === room)
+      .map((u) => ({ username: u.username }));
+
+    this.logger.log(
+      `📡 Envoi des utilisateurs room "${room}" : ${JSON.stringify(usersInRoom)}`,
     );
-    this.logger.log(`📡 Envoi des utilisateurs : ${JSON.stringify(users)}`);
-    this.server.emit('users', users);
+    this.server.to(room).emit('users', usersInRoom);
+  }
+
+  @UseGuards(WsGuard)
+  @SubscribeMessage('joinRoom')
+  handleJoinRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { room: string },
+  ): void {
+    const user = (client.data as { user?: UserPayload }).user;
+    if (user && user.username) {
+      client.join(data.room);
+      this.connectedUsers.set(client.id, {
+        username: user.username,
+        room: data.room,
+      });
+
+      this.logger.log(`🚪 ${user.username} a rejoint la room ${data.room}`);
+
+      this.server.to(data.room).emit('message', {
+        sender: 'System',
+        message: `${user.username} a rejoint la room.`,
+        color: 'gray',
+      });
+
+      this.broadcastUsers(data.room);
+    }
   }
 
   @UseGuards(WsGuard)
@@ -91,13 +126,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: IncomingMessage,
   ): void {
     const user = (client.data as { user?: UserPayload }).user;
-    if (user && user.username) {
-      this.logger.log(`💬 Message de ${user.username} : ${data.message}`);
-      this.server.emit('message', {
+    const userEntry = this.connectedUsers.get(client.id);
+
+    if (user && user.username && userEntry) {
+      const room = userEntry.room;
+      this.logger.log(`💬 [${room}] ${user.username} : ${data.message}`);
+
+      this.server.to(room).emit('message', {
         sender: user.username,
         message: data.message,
         color: data.color,
-        timestamp: data.timestamp,
+        timestamp: data.timestamp || new Date().toISOString(),
       });
     } else {
       this.logger.warn(`Message sans utilisateur identifié`);
@@ -106,11 +145,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @UseGuards(WsGuard)
   @SubscribeMessage('typing')
-  handleTyping(@ConnectedSocket() client: Socket): void {
+  handleTyping(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { room: string },
+  ): void {
     const user = (client.data as { user?: UserPayload }).user;
     if (user && user.username) {
-      this.logger.log(`✏️ ${user.username} est en train d'écrire...`);
-      client.broadcast.emit('typing', {
+      this.logger.log(
+        `✏️ ${user.username} est en train d'écrire dans ${data.room}`,
+      );
+      client.to(data.room).emit('typing', {
         username: user.username,
       });
     }
