@@ -11,7 +11,6 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  // users.service.ts
   async create(
     email: string,
     password: string,
@@ -34,5 +33,14 @@ export class UsersService {
   async findById(id: number): Promise<User | undefined> {
     const user = await this.usersRepository.findOne({ where: { id } });
     return user ?? undefined;
+  }
+
+  async findAllUsernames(): Promise<string[]> {
+    const users = await this.usersRepository.find({ select: ['username'] });
+    return users.map((u) => u.username);
+  }
+
+  async findAll(): Promise<User[]> {
+    return this.usersRepository.find();
   }
 }

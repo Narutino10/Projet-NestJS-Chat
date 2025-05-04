@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ChatGateway } from './chat.gateway';
-import { AuthModule } from '../auth/auth.module';
-import { WsGuard } from '../auth/ws.guard';
+import { JwtModule } from '@nestjs/jwt';
+import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [AuthModule],
-  providers: [ChatGateway, WsGuard],
+  imports: [JwtModule, UsersModule],
+  providers: [ChatGateway],
 })
 export class ChatModule {}

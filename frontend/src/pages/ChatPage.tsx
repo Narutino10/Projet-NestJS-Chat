@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import io, { Socket } from 'socket.io-client';
 import ChatInput from '../components/ChatInput';
@@ -15,7 +15,7 @@ interface Message {
 
 interface User {
   username: string;
-  status: string; // 'online' ou 'offline'
+  status: string; // 'online' | 'offline'
 }
 
 const ChatPage: React.FC = () => {
@@ -30,17 +30,23 @@ const ChatPage: React.FC = () => {
   const [newPrivateMessageFrom, setNewPrivateMessageFrom] = useState<string | null>(null);
 
   const token = localStorage.getItem('token');
-  let currentUsername: string | null = null;
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
 
-  if (token) {
-    try {
-      const payloadBase64 = token.split('.')[1];
-      const decodedPayload = JSON.parse(atob(payloadBase64));
-      currentUsername = decodedPayload.username;
-    } catch (error) {
-      console.error('Erreur lors du décodage du token:', error);
+  useEffect(() => {
+    if (token) {
+      try {
+        const payloadBase64 = token.split('.')[1];
+        const decodedPayload = JSON.parse(atob(payloadBase64));
+        setCurrentUsername(decodedPayload.username);
+      } catch (error) {
+        console.error('Erreur lors du décodage du token:', error);
+        navigate('/login');
+      }
+    } else {
+      alert('Vous devez vous connecter d’abord.');
+      navigate('/login');
     }
-  }
+  }, [navigate, token]);
 
   const playNotificationSound = () => {
     const audio = new Audio('/notification.mp3');
@@ -48,11 +54,7 @@ const ChatPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!token) {
-      alert('Vous devez vous connecter d’abord.');
-      navigate('/login');
-      return;
-    }
+    if (!token) return;
 
     const newSocket = io('http://localhost:3000', {
       auth: { token },
@@ -82,7 +84,7 @@ const ChatPage: React.FC = () => {
 
     newSocket.on('users', (userList: User[]) => {
       console.log('👥 Liste des utilisateurs reçue :', userList);
-      setUsers(userList); // on garde tous les utilisateurs, y compris soi-même
+      setUsers(userList);
     });
 
     newSocket.on('typing', (data: { username: string }) => {
@@ -104,10 +106,12 @@ const ChatPage: React.FC = () => {
     return () => {
       newSocket.disconnect();
     };
-  }, [navigate, room, privateChatUser, token, currentUsername]);
+  }, [room, privateChatUser, token]);
 
-  const handleSend = (msg: string) => {
-    if (socket) {
+  const handleSend = useCallback(
+    (msg: string) => {
+      if (!socket) return;
+
       if (privateChatUser) {
         console.log(`✉️ Envoi message privé à ${privateChatUser}`);
         socket.emit('privateMessage', {
@@ -133,8 +137,9 @@ const ChatPage: React.FC = () => {
           timestamp: new Date().toISOString(),
         });
       }
-    }
-  };
+    },
+    [socket, privateChatUser, room],
+  );
 
   const handleTyping = () => {
     if (socket) {

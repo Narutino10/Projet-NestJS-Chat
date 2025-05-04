@@ -8,9 +8,10 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { UseGuards, Logger } from '@nestjs/common';
+import { UseGuards, Logger, OnModuleInit } from '@nestjs/common';
 import { WsGuard } from '../auth/ws.guard';
 import { JwtService } from '@nestjs/jwt';
+import { UsersService } from '../users/users.service';
 
 interface UserPayload {
   id: string;
@@ -30,19 +31,31 @@ interface IncomingMessage {
     origin: '*',
   },
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway
+  implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit
+{
   @WebSocketServer()
   private readonly server!: Server;
 
   private readonly logger = new Logger(ChatGateway.name);
 
-  // Retient tous les utilisateurs connus
-  private allUsers = new Map<
+  private connectedUsers = new Map<
     string,
-    { username: string; status: string; room: string }
+    { username: string; room: string }
   >();
+  private allUsernames: string[] = [];
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly usersService: UsersService,
+  ) {}
+
+  async onModuleInit(): Promise<void> {
+    this.allUsernames = await this.usersService.findAllUsernames();
+    this.logger.log(
+      `✅ Préchargé ${this.allUsernames.length} utilisateurs depuis la base`,
+    );
+  }
 
   handleConnection(client: Socket): void {
     this.logger.log(`Tentative de connexion : ${client.id}`);
@@ -58,23 +71,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const payload = this.jwtService.verify<UserPayload>(token);
       (client.data as { user?: UserPayload }).user = payload;
 
-      // Vérifie si déjà existant (par username) et supprime ancien ID
-      const existingEntry = Array.from(this.allUsers.entries()).find(
-        ([, u]) => u.username === payload.username,
-      );
-      if (existingEntry) {
-        const [oldId, oldData] = existingEntry;
-        this.allUsers.delete(oldId);
-        this.allUsers.set(client.id, {
-          ...oldData,
-          status: 'online',
-        });
-      } else {
-        this.allUsers.set(client.id, {
-          username: payload.username,
-          status: 'online',
-          room: '',
-        });
+      this.connectedUsers.set(client.id, {
+        username: payload.username,
+        room: '',
+      });
+
+      if (!this.allUsernames.includes(payload.username)) {
+        this.allUsernames.push(payload.username);
       }
 
       this.logger.log(`✅ Connecté : ${client.id} (${payload.username})`);
@@ -85,24 +88,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket): void {
-    const entry = this.allUsers.get(client.id);
+    const entry = this.connectedUsers.get(client.id);
     if (entry) {
-      entry.status = 'offline';
-      this.allUsers.set(client.id, entry);
+      this.connectedUsers.delete(client.id);
       this.logger.log(`❌ ${entry.username} maintenant offline`);
-      this.broadcastUsers(entry.room);
+      void this.broadcastUsers(entry.room);
     } else {
       this.logger.warn(`Déconnexion inconnue : ${client.id}`);
     }
   }
 
   private broadcastUsers(room: string): void {
-    const usersInRoom = Array.from(this.allUsers.values())
-      .filter((u) => u.room === room)
-      .map((u) => ({
-        username: u.username,
-        status: u.status,
-      }));
+    const usersInRoom = this.allUsernames.map((username) => {
+      const isOnline = Array.from(this.connectedUsers.values()).some(
+        (u) => u.username === username && u.room === room,
+      );
+      return {
+        username,
+        status: isOnline ? 'online' : 'offline',
+      };
+    });
 
     this.logger.log(
       `📡 Envoi des utilisateurs room "${room}" : ${JSON.stringify(
@@ -121,11 +126,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const user = (client.data as { user?: UserPayload }).user;
     if (user && user.username) {
       client.join(data.room);
-      const entry = this.allUsers.get(client.id);
+      const entry = this.connectedUsers.get(client.id);
       if (entry) {
         entry.room = data.room;
-        entry.status = 'online';
-        this.allUsers.set(client.id, entry);
+        this.connectedUsers.set(client.id, entry);
       }
 
       this.logger.log(`🚪 ${user.username} a rejoint la room ${data.room}`);
@@ -147,15 +151,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: IncomingMessage,
   ): void {
     const user = (client.data as { user?: UserPayload }).user;
-    const entry = this.allUsers.get(client.id);
+    const entry = this.connectedUsers.get(client.id);
 
     if (user && user.username && entry) {
       const room = entry.room;
-      this.logger.log(`💬 [${room}] ${user.username} : ${data.message}`);
+      const messageContent: string = data.message || '';
+
+      this.logger.log(`💬 [${room}] ${user.username} : ${messageContent}`);
 
       this.server.to(room).emit('message', {
         sender: user.username,
-        message: data.message,
+        message: messageContent,
         color: data.color,
         timestamp: data.timestamp || new Date().toISOString(),
       });
@@ -173,7 +179,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ): void {
     const user = (client.data as { user?: UserPayload }).user;
     if (user && user.username) {
-      const receiverEntry = Array.from(this.allUsers.entries()).find(
+      const receiverEntry = Array.from(this.connectedUsers.entries()).find(
         ([, u]) => u.username === data.receiverUsername,
       );
 
