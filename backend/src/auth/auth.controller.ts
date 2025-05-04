@@ -11,9 +11,9 @@ export class AuthController {
 
   @Post('register')
   async register(
-    @Body() body: { email: string; password: string },
+    @Body() body: { email: string; password: string; username: string },
   ): Promise<{ message: string }> {
-    await this.usersService.create(body.email, body.password);
+    await this.usersService.create(body.email, body.password, body.username);
     return { message: 'User registered successfully' };
   }
 

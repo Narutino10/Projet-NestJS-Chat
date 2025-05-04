@@ -11,11 +11,17 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  async create(email: string, password: string): Promise<User> {
+  // users.service.ts
+  async create(
+    email: string,
+    password: string,
+    username: string,
+  ): Promise<User> {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = this.usersRepository.create({
       email,
       password: hashedPassword,
+      username,
     });
     return this.usersRepository.save(user);
   }
