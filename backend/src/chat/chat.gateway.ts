@@ -8,8 +8,9 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { UseGuards } from '@nestjs/common';
+import { UseGuards, Logger } from '@nestjs/common';
 import { WsGuard } from '../auth/ws.guard';
+import { JwtService } from '@nestjs/jwt';
 
 interface UserPayload {
   id: string;
@@ -19,34 +20,54 @@ interface UserPayload {
 
 @WebSocketGateway({
   cors: {
-    origin: '*', // à restreindre plus tard en prod
+    origin: '*',
   },
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  private _server!: Server;
+  private readonly _server!: Server;
+
+  private readonly logger = new Logger(ChatGateway.name);
+
+  private connectedUsers = new Map<string, string>();
+
+  constructor(private readonly jwtService: JwtService) {}
 
   private get server(): Server {
     return this._server;
   }
 
-  private connectedUsers = new Map<string, string>();
-
   handleConnection(client: Socket): void {
-    const user = (client.data as { user: UserPayload }).user;
-    if (user && user.username) {
-      this.connectedUsers.set(client.id, user.username);
+    this.logger.log(`Tentative de connexion : ${client.id}`);
+
+    const token = client.handshake?.auth?.token as string | undefined;
+    if (!token) {
+      this.logger.warn(`❌ Pas de token fourni`);
+      client.disconnect();
+      return;
+    }
+
+    try {
+      const payload = this.jwtService.verify<UserPayload>(token);
+      (client.data as { user?: UserPayload }).user = payload;
+
+      this.connectedUsers.set(client.id, payload.username);
+      this.logger.log(`✅ Connecté : ${client.id} (${payload.username})`);
       this.broadcastUsers();
-      console.log(`Client connected: ${client.id} (${user.username})`);
+    } catch {
+      this.logger.warn(`❌ Token invalide`);
+      client.disconnect();
     }
   }
 
   handleDisconnect(client: Socket): void {
-    const user = (client.data as { user: UserPayload }).user;
+    const user = (client.data as { user?: UserPayload }).user;
     if (user && user.username) {
       this.connectedUsers.delete(client.id);
+      this.logger.log(`❌ Déconnecté : ${client.id} (${user.username})`);
       this.broadcastUsers();
-      console.log(`Client disconnected: ${client.id} (${user.username})`);
+    } else {
+      this.logger.warn(`Déconnexion inconnue : ${client.id}`);
     }
   }
 
@@ -57,6 +78,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         username,
       }),
     );
+    this.logger.log(`📡 Envoi des utilisateurs : ${JSON.stringify(users)}`);
     this.server.emit('users', users);
   }
 
@@ -70,15 +92,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       color: string;
     },
   ): void {
-    const user = (client.data as { user: UserPayload }).user;
+    const user = (client.data as { user?: UserPayload }).user;
     if (user && user.username) {
-      console.log(`Message from ${user.username}: ${data.message}`);
-
+      this.logger.log(`💬 Message de ${user.username} : ${data.message}`);
       this.server.emit('message', {
         sender: user.username,
         message: data.message,
         color: data.color,
       });
+    } else {
+      this.logger.warn(`Message sans utilisateur identifié`);
     }
   }
 }

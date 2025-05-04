@@ -31,19 +31,33 @@ const ChatPage: React.FC = () => {
       return;
     }
 
-    const newSocket = io('http://localhost:3000', {
+    const newSocket: Socket = io('http://localhost:3000', {
       auth: { token },
     });
 
-    setSocket(newSocket);
+    newSocket.on('connect', () => {
+      console.log('✅ Connecté au serveur WebSocket (id :', newSocket.id, ')');
+    });
 
     newSocket.on('message', (msg: Message) => {
+      console.log('📩 Nouveau message reçu :', msg);
       setMessages((prev) => [...prev, msg]);
     });
 
     newSocket.on('users', (userList: User[]) => {
+      console.log('👥 Liste des utilisateurs reçue :', userList);
       setUsers(userList);
     });
+
+    newSocket.on('disconnect', () => {
+      console.warn('⚠️ Déconnecté du serveur WebSocket');
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.error('❌ Erreur de connexion WebSocket :', err.message);
+    });
+
+    setSocket(newSocket);
 
     return () => {
       newSocket.disconnect();
@@ -51,13 +65,21 @@ const ChatPage: React.FC = () => {
   }, [navigate]);
 
   const handleSend = (msg: string) => {
-    socket?.emit('message', { message: msg, color: 'blue' });
+    if (socket) {
+      console.log('✉️ Envoi du message :', msg);
+      socket.emit('message', { message: msg, color: 'blue' });
+    }
   };
 
   return (
     <div className="chat-page">
       <div className="sidebar">
-        <UserList users={users} />
+        <h3>Utilisateurs en ligne</h3>
+        {users.length === 0 ? (
+          <p>Aucun utilisateur en ligne</p>
+        ) : (
+          <UserList users={users} />
+        )}
       </div>
       <div className="chat-area">
         <div className="messages">

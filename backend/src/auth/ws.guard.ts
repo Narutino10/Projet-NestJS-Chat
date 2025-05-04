@@ -21,13 +21,19 @@ export class WsGuard implements CanActivate {
     const token =
       typeof handshakeAuth.token === 'string' ? handshakeAuth.token : undefined;
 
+    console.log('👉 [WsGuard] Handshake reçu :', handshakeAuth);
+    console.log('👉 [WsGuard] Token extrait :', token);
+
     if (!token) {
-      console.warn('No token provided in WebSocket handshake');
+      console.warn(
+        '⚠️ [WsGuard] Aucun token fourni dans le handshake WebSocket',
+      );
       return false;
     }
 
     try {
       const payload: JwtPayload = this.jwtService.verify<JwtPayload>(token);
+      console.log('✅ [WsGuard] Payload JWT décodé :', payload);
       client.data = {
         ...(client.data as Record<string, unknown>),
         user: payload,
@@ -35,7 +41,7 @@ export class WsGuard implements CanActivate {
       return true;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      console.warn('Invalid WebSocket token:', errorMessage);
+      console.warn('❌ [WsGuard] Token WebSocket invalide:', errorMessage);
       return false;
     }
   }
