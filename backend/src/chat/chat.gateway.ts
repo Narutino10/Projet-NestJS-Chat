@@ -10,11 +10,11 @@ import {
 import { Server, Socket } from 'socket.io';
 import { UseGuards, Logger, OnModuleInit } from '@nestjs/common';
 import { WsGuard } from '../auth/ws.guard';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtVerifyOptions } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 
 interface UserPayload {
-  id: string;
+  id: number;
   email: string;
   username: string;
 }
@@ -68,7 +68,18 @@ export class ChatGateway
     }
 
     try {
-      const payload = this.jwtService.verify<UserPayload>(token);
+      const decoded = this.jwtService.verify<{
+        sub: number;
+        email: string;
+        username: string;
+      }>(token, { secret: 'supersecret' } as JwtVerifyOptions);
+
+      const payload: UserPayload = {
+        id: decoded.sub,
+        email: decoded.email,
+        username: decoded.username,
+      };
+
       (client.data as { user?: UserPayload }).user = payload;
 
       this.connectedUsers.set(client.id, {
@@ -92,7 +103,7 @@ export class ChatGateway
     if (entry) {
       this.connectedUsers.delete(client.id);
       this.logger.log(`❌ ${entry.username} maintenant offline`);
-      void this.broadcastUsers(entry.room);
+      this.broadcastUsers(entry.room);
     } else {
       this.logger.warn(`Déconnexion inconnue : ${client.id}`);
     }
@@ -155,7 +166,7 @@ export class ChatGateway
 
     if (user && user.username && entry) {
       const room = entry.room;
-      const messageContent: string = data.message || '';
+      const messageContent = data.message || '';
 
       this.logger.log(`💬 [${room}] ${user.username} : ${messageContent}`);
 
