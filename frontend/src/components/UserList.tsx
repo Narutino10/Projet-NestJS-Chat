@@ -9,14 +9,14 @@ interface User {
 interface UserListProps {
   users: User[];
   onSendPrivate: (username: string) => void;
-  newPrivateMessageFrom: string | null;
+  unreadPrivateMessages: { [username: string]: number };
   currentUsername: string | null;
 }
 
 const UserList: React.FC<UserListProps> = ({
   users,
   onSendPrivate,
-  newPrivateMessageFrom,
+  unreadPrivateMessages,
   currentUsername,
 }) => {
   return (
@@ -30,8 +30,8 @@ const UserList: React.FC<UserListProps> = ({
             <li key={index} className={user.status}>
               <span className={`status-dot ${user.status === 'online' ? 'online' : 'offline'}`} />
               {user.username === currentUsername ? 'Moi' : user.username}
-              {newPrivateMessageFrom === user.username && (
-                <span className="badge">Nouveau</span>
+              {unreadPrivateMessages[user.username] > 0 && (
+                <span className="badge">{unreadPrivateMessages[user.username]} non lu(s)</span>
               )}
               <button
                 onClick={() => onSendPrivate(user.username)}

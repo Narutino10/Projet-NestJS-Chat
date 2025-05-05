@@ -15,7 +15,7 @@ interface Message {
 
 interface User {
   username: string;
-  status: string; // 'online' | 'offline'
+  status: string;
 }
 
 const ChatPage: React.FC = () => {
@@ -27,7 +27,7 @@ const ChatPage: React.FC = () => {
   const [room, setRoom] = useState<string>('general');
   const [privateChatUser, setPrivateChatUser] = useState<string | null>(null);
   const [privateMessages, setPrivateMessages] = useState<Message[]>([]);
-  const [newPrivateMessageFrom, setNewPrivateMessageFrom] = useState<string | null>(null);
+  const [unreadPrivateMessages, setUnreadPrivateMessages] = useState<{ [username: string]: number }>({});
 
   const token = localStorage.getItem('token');
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
@@ -76,7 +76,10 @@ const ChatPage: React.FC = () => {
       playNotificationSound();
 
       if (msg.sender !== privateChatUser) {
-        setNewPrivateMessageFrom(msg.sender);
+        setUnreadPrivateMessages((prev) => ({
+          ...prev,
+          [msg.sender]: (prev[msg.sender] || 0) + 1,
+        }));
       }
 
       setPrivateMessages((prev) => [...prev, msg]);
@@ -161,8 +164,29 @@ const ChatPage: React.FC = () => {
     console.log(`🔒 Ouverture du DM avec ${username}`);
     setPrivateChatUser(username);
     setPrivateMessages([]);
-    setNewPrivateMessageFrom(null);
+    setUnreadPrivateMessages((prev) => ({
+      ...prev,
+      [username]: 0,
+    }));
+  
+    if (socket) {
+      // 💥 AJOUTE CETTE LIGNE :
+      socket.emit('getPrivateHistory', { withUser: username });
+  
+      // 💥 ÉCOUTE LA RÉPONSE UNE SEULE FOIS :
+      socket.once('privateHistory', (messages: any[]) => {
+        console.log('📜 Historique des messages privés reçu :', messages);
+        setPrivateMessages(messages.map((msg) => ({
+          sender: msg.sender === currentUsername ? 'Moi' : msg.sender,
+          message: msg.message,
+          color: msg.sender === currentUsername ? 'purple' : 'gray',
+          timestamp: msg.timestamp,
+        })));
+      });
+           
+    }
   };
+  
 
   return (
     <div className="chat-page">
@@ -176,7 +200,7 @@ const ChatPage: React.FC = () => {
         <UserList
           users={users}
           onSendPrivate={handleSendPrivate}
-          newPrivateMessageFrom={newPrivateMessageFrom}
+          unreadPrivateMessages={unreadPrivateMessages}
           currentUsername={currentUsername}
         />
       </div>
