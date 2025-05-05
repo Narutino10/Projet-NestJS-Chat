@@ -30,7 +30,7 @@ const ChatPage: React.FC = () => {
   const [privateMessages, setPrivateMessages] = useState<Message[]>([]);
   const [unreadPrivateMessages, setUnreadPrivateMessages] = useState<{ [username: string]: number }>({});
 
-  const [avatar, setAvatar] = useState<string>('');
+  const [avatar, setAvatar] = useState<string>('https://via.placeholder.com/40'); // default avatar
   const [bubbleColor, setBubbleColor] = useState<string>('#7289da');
   const [pageColor, setPageColor] = useState<string>('#fafafa');
 
@@ -71,13 +71,11 @@ const ChatPage: React.FC = () => {
     });
 
     newSocket.on('message', (msg: Message) => {
-      console.log('📩 Nouveau message public reçu :', msg);
       playNotificationSound();
       setMessages((prev) => [...prev, msg]);
     });
 
     newSocket.on('privateMessage', (msg: Message & { sender: string }) => {
-      console.log('📩 Nouveau message privé reçu :', msg);
       playNotificationSound();
 
       if (msg.sender !== privateChatUser) {
@@ -98,12 +96,10 @@ const ChatPage: React.FC = () => {
     });
 
     newSocket.on('users', (userList: User[]) => {
-      console.log('👥 Liste des utilisateurs reçue :', userList);
       setUsers(userList);
     });
 
     newSocket.on('typing', (data: { username: string }) => {
-      console.log('✏️ Utilisateur en train d’écrire :', data.username);
       setTypingUser(data.username);
       setTimeout(() => setTypingUser(null), 3000);
     });
@@ -194,7 +190,7 @@ const ChatPage: React.FC = () => {
   const handleProfileUpdate = (newAvatar: string, newColor: string) => {
     setAvatar(newAvatar);
     setBubbleColor(newColor);
-    setPageColor(newColor + '33'); // light background (e.g., #7289da33)
+    setPageColor(newColor + '33'); // lightened page background
   };
 
   return (

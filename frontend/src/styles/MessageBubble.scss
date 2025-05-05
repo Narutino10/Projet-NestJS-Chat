@@ -1,14 +1,30 @@
 .message-bubble {
   display: flex;
-  align-items: center;
-  margin: 5px;
+  align-items: flex-end;
+  margin: 8px;
 
   &.mine {
     justify-content: flex-end;
+    .bubble-content {
+      background-color: var(--my-bubble-color, #7289da);
+      color: white;
+    }
   }
 
   &.theirs {
     justify-content: flex-start;
+    .bubble-content {
+      background-color: #e0e0e0;
+      color: black;
+    }
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin: 0 8px;
+    object-fit: cover;
   }
 
   .bubble-content {
@@ -16,17 +32,5 @@
     border-radius: 15px;
     max-width: 60%;
     word-wrap: break-word;
-    background-color: #e0e0e0; // couleur par défaut si pas override par inline
-    color: #333;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  .avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    margin: 0 8px;
-    object-fit: cover;
-    border: 1px solid #ccc;
   }
 }

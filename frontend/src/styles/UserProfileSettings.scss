@@ -1,37 +1,39 @@
 .user-profile-settings {
-    padding: 1rem;
-    background: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-  
-    .avatar-selection {
-      display: flex;
-      gap: 10px;
-  
-      img {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        cursor: pointer;
-        border: 2px solid transparent;
-  
-        &.selected {
-          border-color: #007bff;
-        }
-      }
+  padding: 10px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+
+  h4 {
+    margin-bottom: 10px;
+  }
+
+  .form-group {
+    margin-bottom: 10px;
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
     }
-  
-    .section {
-      margin-bottom: 1rem;
-    }
-  
-    button {
-      padding: 0.5rem 1rem;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
+
+    select,
+    input[type='color'] {
+      width: 100%;
+      padding: 5px;
     }
   }
-  
+
+  button {
+    padding: 6px 12px;
+    background-color: #7289da;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #5b6eae;
+    }
+  }
+}

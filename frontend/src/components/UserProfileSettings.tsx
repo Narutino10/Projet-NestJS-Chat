@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import '../styles/UserProfileSettings.scss';
 
 interface UserProfileSettingsProps {
@@ -6,7 +6,7 @@ interface UserProfileSettingsProps {
 }
 
 const UserProfileSettings: React.FC<UserProfileSettingsProps> = ({ onUpdate }) => {
-  const [avatar, setAvatar] = useState('');
+  const [avatar, setAvatar] = useState('avatar1.png');
   const [color, setColor] = useState('#7289da');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -15,15 +15,20 @@ const UserProfileSettings: React.FC<UserProfileSettingsProps> = ({ onUpdate }) =
   };
 
   return (
-    <div style={{ padding: '10px', border: '1px solid #ccc', marginBottom: '10px' }}>
+    <div className="user-profile-settings">
       <h4>Personnalisation</h4>
       <form onSubmit={handleSubmit}>
-        <div>
-          <label>Avatar (URL): </label>
-          <input type="text" value={avatar} onChange={(e) => setAvatar(e.target.value)} />
+        <div className="form-group">
+          <label>Choisir un avatar:</label>
+          <select value={avatar} onChange={(e) => setAvatar(e.target.value)}>
+            <option value="avatar1.png">Avatar 1</option>
+            <option value="avatar2.png">Avatar 2</option>
+            <option value="avatar3.png">Avatar 3</option>
+            <option value="avatar4.png">Avatar 4</option>
+          </select>
         </div>
-        <div>
-          <label>Couleur: </label>
+        <div className="form-group">
+          <label>Choisir une couleur de bulle:</label>
           <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
         </div>
         <button type="submit">Mettre à jour</button>
