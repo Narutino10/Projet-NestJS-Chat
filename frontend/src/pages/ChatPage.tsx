@@ -7,11 +7,18 @@ import UserList from '../components/UserList';
 import UserProfileSettings from '../components/UserProfileSettings';
 import '../styles/ChatPage.scss';
 
+interface Reaction {
+  emoji: string;
+  count: number;
+}
+
 interface Message {
+  id: number;
   sender: string;
   message: string;
   color: string;
   timestamp: string;
+  reactions: Reaction[];
 }
 
 interface User {
@@ -30,7 +37,7 @@ const ChatPage: React.FC = () => {
   const [privateMessages, setPrivateMessages] = useState<Message[]>([]);
   const [unreadPrivateMessages, setUnreadPrivateMessages] = useState<{ [username: string]: number }>({});
 
-  const [avatar, setAvatar] = useState<string>('https://via.placeholder.com/40'); // default avatar
+  const [avatar, setAvatar] = useState<string>('avatar1.png'); 
   const [bubbleColor, setBubbleColor] = useState<string>('#7289da');
   const [pageColor, setPageColor] = useState<string>('#fafafa');
 
@@ -66,16 +73,34 @@ const ChatPage: React.FC = () => {
     });
 
     newSocket.on('connect', () => {
-      console.log('✅ Connecté au serveur WebSocket');
       newSocket.emit('joinRoom', { room });
     });
 
-    newSocket.on('message', (msg: Message) => {
+    newSocket.on('message', (msg: any) => {
       playNotificationSound();
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => [...prev, { ...msg, reactions: [] }]);
     });
 
-    newSocket.on('privateMessage', (msg: Message & { sender: string }) => {
+    newSocket.on('reactionAdded', (data) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === data.messageId
+            ? {
+                ...m,
+                reactions: [
+                  ...m.reactions.filter((r) => r.emoji !== data.emoji),
+                  {
+                    emoji: data.emoji,
+                    count: (m.reactions.find((r) => r.emoji === data.emoji)?.count || 0) + 1,
+                  },
+                ],
+              }
+            : m
+        )
+      );
+    });
+
+    newSocket.on('privateMessage', (msg: any) => {
       playNotificationSound();
 
       if (msg.sender !== privateChatUser) {
@@ -91,6 +116,8 @@ const ChatPage: React.FC = () => {
           message: msg.message,
           color: 'gray',
           timestamp: msg.timestamp,
+          id: msg.id,
+          reactions: [],
         }]);
       }
     });
@@ -123,36 +150,33 @@ const ChatPage: React.FC = () => {
     (msg: string) => {
       if (!socket) return;
 
+      const messageObj = {
+        id: Date.now(), 
+        room,
+        message: msg,
+        color: bubbleColor,
+        timestamp: new Date().toISOString(),
+        reactions: [],
+      };
+
       if (privateChatUser) {
         socket.emit('privateMessage', {
           receiverUsername: privateChatUser,
           message: msg,
           color: bubbleColor,
         });
-        setPrivateMessages((prev) => [
-          ...prev,
-          {
-            sender: 'Moi',
-            message: msg,
-            color: bubbleColor,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
+        setPrivateMessages((prev) => [...prev, { ...messageObj, sender: 'Moi' }]);
       } else {
-        socket.emit('message', {
-          room,
-          message: msg,
-          color: bubbleColor,
-          timestamp: new Date().toISOString(),
-        });
+        socket.emit('message', messageObj);
+        setMessages((prev) => [...prev, { ...messageObj, sender: currentUsername || 'Moi' }]);
       }
     },
-    [socket, privateChatUser, room, bubbleColor],
+    [socket, privateChatUser, room, bubbleColor, currentUsername]
   );
 
-  const handleTyping = () => {
+  const handleReact = (messageId: number, emoji: string) => {
     if (socket) {
-      socket.emit('typing', { room });
+      socket.emit('addReaction', { messageId, emoji });
     }
   };
 
@@ -182,6 +206,8 @@ const ChatPage: React.FC = () => {
           message: msg.message,
           color: msg.sender === currentUsername ? bubbleColor : 'gray',
           timestamp: msg.timestamp,
+          id: msg.id,
+          reactions: [],
         })));
       });
     }
@@ -190,14 +216,13 @@ const ChatPage: React.FC = () => {
   const handleProfileUpdate = (newAvatar: string, newColor: string) => {
     setAvatar(newAvatar);
     setBubbleColor(newColor);
-    setPageColor(newColor + '33'); // lightened page background
+    setPageColor(newColor + '33');
   };
 
   return (
     <div className="chat-page" style={{ backgroundColor: pageColor }}>
       <div className="sidebar">
         <UserProfileSettings onUpdate={handleProfileUpdate} />
-
         <h3>Choisir une room</h3>
         <select value={room} onChange={handleRoomChange}>
           <option value="general">Général</option>
@@ -228,6 +253,9 @@ const ChatPage: React.FC = () => {
                   color={m.color}
                   isMine={m.sender === 'Moi'}
                   avatar={avatar}
+                  messageId={m.id}
+                  onReact={handleReact}
+                  reactions={m.reactions}
                 />
               ))}
             </div>
@@ -248,15 +276,16 @@ const ChatPage: React.FC = () => {
                     color={m.color}
                     isMine={m.sender === currentUsername}
                     avatar={avatar}
+                    messageId={m.id}
+                    onReact={handleReact}
+                    reactions={m.reactions}
                   />
                 )}
               </div>
             ))}
           </div>
         )}
-
-        <ChatInput onSend={handleSend} onTyping={handleTyping} />
-
+        <ChatInput onSend={handleSend} onTyping={() => {}} />
         {typingUser && (
           <div className="typing-indicator">
             <p>{typingUser} est en train d’écrire...</p>
