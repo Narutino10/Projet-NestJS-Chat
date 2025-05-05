@@ -1,0 +1,37 @@
+.user-profile-settings {
+    padding: 1rem;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  
+    .avatar-selection {
+      display: flex;
+      gap: 10px;
+  
+      img {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid transparent;
+  
+        &.selected {
+          border-color: #007bff;
+        }
+      }
+    }
+  
+    .section {
+      margin-bottom: 1rem;
+    }
+  
+    button {
+      padding: 0.5rem 1rem;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  }
+  

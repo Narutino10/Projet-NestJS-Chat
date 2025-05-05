@@ -4,6 +4,7 @@ import io, { Socket } from 'socket.io-client';
 import ChatInput from '../components/ChatInput';
 import MessageBubble from '../components/MessageBubble';
 import UserList from '../components/UserList';
+import UserProfileSettings from '../components/UserProfileSettings';
 import '../styles/ChatPage.scss';
 
 interface Message {
@@ -31,6 +32,11 @@ const ChatPage: React.FC = () => {
 
   const token = localStorage.getItem('token');
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
+
+  // 🔧 nouveaux états pour la personnalisation :
+  const [showSettings, setShowSettings] = useState(false);
+  const [userAvatar, setUserAvatar] = useState('/avatars/avatar1.png');
+  const [userColor, setUserColor] = useState('#800080'); // violet par défaut
 
   useEffect(() => {
     if (token) {
@@ -82,7 +88,6 @@ const ChatPage: React.FC = () => {
         }));
       }
 
-      // ✅ Évite de doubler les messages envoyés par moi-même
       if (msg.sender !== currentUsername) {
         setPrivateMessages((prev) => [...prev, {
           sender: msg.sender,
@@ -128,14 +133,14 @@ const ChatPage: React.FC = () => {
         socket.emit('privateMessage', {
           receiverUsername: privateChatUser,
           message: msg,
-          color: 'purple',
+          color: userColor, // 👉 utilise la couleur choisie
         });
         setPrivateMessages((prev) => [
           ...prev,
           {
             sender: 'Moi',
             message: msg,
-            color: 'purple',
+            color: userColor,
             timestamp: new Date().toISOString(),
           },
         ]);
@@ -144,12 +149,12 @@ const ChatPage: React.FC = () => {
         socket.emit('message', {
           room,
           message: msg,
-          color: 'blue',
+          color: userColor, // 👉 utilise la couleur choisie
           timestamp: new Date().toISOString(),
         });
       }
     },
-    [socket, privateChatUser, room],
+    [socket, privateChatUser, room, userColor],
   );
 
   const handleTyping = () => {
@@ -185,11 +190,17 @@ const ChatPage: React.FC = () => {
         setPrivateMessages(messages.map((msg) => ({
           sender: msg.sender === currentUsername ? 'Moi' : msg.sender,
           message: msg.message,
-          color: msg.sender === currentUsername ? 'purple' : 'gray',
+          color: msg.sender === currentUsername ? userColor : 'gray',
           timestamp: msg.timestamp,
         })));
       });
     }
+  };
+
+  const handleSaveProfile = (avatar: string, color: string) => {
+    setUserAvatar(avatar);
+    setUserColor(color);
+    setShowSettings(false);
   };
 
   return (
@@ -201,6 +212,19 @@ const ChatPage: React.FC = () => {
           <option value="sport">Sport</option>
           <option value="musique">Musique</option>
         </select>
+
+        <button onClick={() => setShowSettings(!showSettings)}>
+          {showSettings ? 'Fermer les paramètres' : 'Personnaliser mon profil'}
+        </button>
+
+        {showSettings && (
+          <UserProfileSettings
+            currentAvatar={userAvatar}
+            currentColor={userColor}
+            onSave={handleSaveProfile}
+          />
+        )}
+
         <UserList
           users={users}
           onSendPrivate={handleSendPrivate}
@@ -216,15 +240,15 @@ const ChatPage: React.FC = () => {
             <div className="messages">
               {privateMessages.map((m, index) => (
                 <MessageBubble
-                key={index}
-                sender={`${m.sender} (${new Date(m.timestamp).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })})`}
-                message={m.message}
-                color={m.color}
-                isMine={m.sender === 'Moi'} // 💥 ajouté
-              />              
+                  key={index}
+                  sender={`${m.sender} (${new Date(m.timestamp).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })})`}
+                  message={m.message}
+                  color={m.color}
+                  isMine={m.sender === 'Moi'}
+                />
               ))}
             </div>
           </div>
@@ -242,7 +266,7 @@ const ChatPage: React.FC = () => {
                     })})`}
                     message={m.message}
                     color={m.color}
-                    isMine={m.sender === currentUsername} 
+                    isMine={m.sender === currentUsername}
                   />
                 )}
               </div>
