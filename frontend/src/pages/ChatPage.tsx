@@ -37,7 +37,7 @@ const ChatPage: React.FC = () => {
   const [privateMessages, setPrivateMessages] = useState<Message[]>([]);
   const [unreadPrivateMessages, setUnreadPrivateMessages] = useState<{ [username: string]: number }>({});
 
-  const [avatar, setAvatar] = useState<string>('avatar1.png'); 
+  const [avatar, setAvatar] = useState<string>('avatar1.png');
   const [bubbleColor, setBubbleColor] = useState<string>('#7289da');
   const [pageColor, setPageColor] = useState<string>('#fafafa');
 
@@ -78,27 +78,35 @@ const ChatPage: React.FC = () => {
 
     newSocket.on('message', (msg: any) => {
       playNotificationSound();
-      setMessages((prev) => [...prev, { ...msg, reactions: [] }]);
+      setMessages((prev) => {
+        const exists = prev.some(
+          (m) => m.id === msg.id && m.sender === msg.sender && m.message === msg.message
+        );
+        if (exists) return prev;
+        return [...prev, { ...msg, reactions: [] }];
+      });
     });
 
     newSocket.on('reactionAdded', (data) => {
       setMessages((prev) =>
-        prev.map((m) =>
-          m.id === data.messageId
-            ? {
-                ...m,
-                reactions: [
-                  ...m.reactions.filter((r) => r.emoji !== data.emoji),
-                  {
-                    emoji: data.emoji,
-                    count: (m.reactions.find((r) => r.emoji === data.emoji)?.count || 0) + 1,
-                  },
-                ],
-              }
-            : m
-        )
+        prev.map((m) => {
+          if (m.id !== data.messageId) return m;
+    
+          const existing = m.reactions.find((r) => r.emoji === data.emoji);
+          const updatedReactions = existing
+            ? m.reactions.map((r) =>
+                r.emoji === data.emoji ? { ...r, count: r.count + 1 } : r
+              )
+            : [...m.reactions, { emoji: data.emoji, count: 1 }];
+    
+          return {
+            ...m,
+            reactions: updatedReactions,
+          };
+        })
       );
     });
+    
 
     newSocket.on('privateMessage', (msg: any) => {
       playNotificationSound();
@@ -151,7 +159,7 @@ const ChatPage: React.FC = () => {
       if (!socket) return;
 
       const messageObj = {
-        id: Date.now(), 
+        id: Date.now(),
         room,
         message: msg,
         color: bubbleColor,
@@ -168,7 +176,7 @@ const ChatPage: React.FC = () => {
         setPrivateMessages((prev) => [...prev, { ...messageObj, sender: 'Moi' }]);
       } else {
         socket.emit('message', messageObj);
-        setMessages((prev) => [...prev, { ...messageObj, sender: currentUsername || 'Moi' }]);
+        // 👉 On NE push PAS localement, on attend le retour serveur (pour éviter le double)
       }
     },
     [socket, privateChatUser, room, bubbleColor, currentUsername]
@@ -242,47 +250,53 @@ const ChatPage: React.FC = () => {
           <div className="private-chat">
             <h4>DM avec {privateChatUser}</h4>
             <div className="messages">
-              {privateMessages.map((m, index) => (
-                <MessageBubble
-                  key={index}
-                  sender={`${m.sender} (${new Date(m.timestamp).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })})`}
-                  message={m.message}
-                  color={m.color}
-                  isMine={m.sender === 'Moi'}
-                  avatar={avatar}
-                  messageId={m.id}
-                  onReact={handleReact}
-                  reactions={m.reactions}
-                />
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="messages">
-            {messages.map((m, index) => (
-              <div key={index}>
-                {m.sender === 'System' ? (
-                  <div className="system-message">{m.message}</div>
-                ) : (
+              {privateMessages.map((m, index) => {
+                const displaySender = m.sender === currentUsername ? 'Moi' : m.sender;
+                return (
                   <MessageBubble
-                    sender={`${m.sender} (${new Date(m.timestamp).toLocaleTimeString([], {
+                    key={index}
+                    sender={`${displaySender} (${new Date(m.timestamp).toLocaleTimeString([], {
                       hour: '2-digit',
                       minute: '2-digit',
                     })})`}
                     message={m.message}
                     color={m.color}
-                    isMine={m.sender === currentUsername}
+                    isMine={m.sender === 'Moi'}
                     avatar={avatar}
                     messageId={m.id}
                     onReact={handleReact}
                     reactions={m.reactions}
                   />
-                )}
-              </div>
-            ))}
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="messages">
+            {messages.map((m, index) => {
+              const displaySender = m.sender === currentUsername ? 'Moi' : m.sender;
+              return (
+                <div key={index}>
+                  {m.sender === 'System' ? (
+                    <div className="system-message">{m.message}</div>
+                  ) : (
+                    <MessageBubble
+                      sender={`${displaySender} (${new Date(m.timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })})`}
+                      message={m.message}
+                      color={m.color}
+                      isMine={m.sender === currentUsername}
+                      avatar={avatar}
+                      messageId={m.id}
+                      onReact={handleReact}
+                      reactions={m.reactions}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
         <ChatInput onSend={handleSend} onTyping={() => {}} />

@@ -43,4 +43,17 @@ export class UsersService {
   async findAll(): Promise<User[]> {
     return this.usersRepository.find();
   }
+
+  async updateColorAndAvatar(body: { email: string; color: string; avatar: string }) {
+    const user = await this.usersRepository.findOne({
+      where: { email: body.email },
+    });
+    if (!user) throw new Error('User not found');
+  
+    user.color = body.color;
+    user.avatar = body.avatar;
+  
+    return this.usersRepository.save(user);
+  }
+  
 }

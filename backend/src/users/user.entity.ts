@@ -14,6 +14,9 @@ export class User {
   @Column()
   username: string;
 
-  @Column({ default: '#000000' })
+  @Column({ nullable: true })
+  avatar: string;
+
+  @Column({ nullable: true })
   color: string;
 }
