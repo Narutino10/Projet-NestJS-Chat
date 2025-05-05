@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { Reaction } from './reaction.entity';
 
 @Entity()
 export class PrivateMessage {
@@ -16,4 +17,7 @@ export class PrivateMessage {
 
   @CreateDateColumn()
   timestamp: Date;
+
+  @OneToMany(() => Reaction, (reaction) => reaction.message)
+  reactions: Reaction[];
 }

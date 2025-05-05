@@ -13,6 +13,7 @@ import { WsGuard } from '../auth/ws.guard';
 import { JwtService, JwtVerifyOptions } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { PrivateMessageService } from './private-message.service';
+import { ReactionService } from './reaction.service';
 
 interface UserPayload {
   id: number;
@@ -47,6 +48,7 @@ export class ChatGateway
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
     private readonly privateMessageService: PrivateMessageService,
+    private readonly reactionService: ReactionService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -222,4 +224,23 @@ export class ChatGateway
       client.to(data.room).emit('typing', { username: user.username });
     }
   }
+
+
+  @SubscribeMessage('addReaction')
+async handleAddReaction(
+  @ConnectedSocket() client: Socket,
+  @MessageBody() data: { messageId: number; emoji: string },
+) {
+  const user = (client.data as { user?: UserPayload }).user;
+  if (!user) return;
+
+  await this.reactionService.addReaction(user.username, data.messageId, data.emoji);
+
+  this.server.emit('reactionAdded', {
+    messageId: data.messageId,
+    userId: user.id,
+    emoji: data.emoji,
+  });
+}
+
 }
