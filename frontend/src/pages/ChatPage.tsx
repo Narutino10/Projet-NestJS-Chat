@@ -216,14 +216,15 @@ const ChatPage: React.FC = () => {
             <div className="messages">
               {privateMessages.map((m, index) => (
                 <MessageBubble
-                  key={index}
-                  sender={`${m.sender} (${new Date(m.timestamp).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })})`}
-                  message={m.message}
-                  color={m.color}
-                />
+                key={index}
+                sender={`${m.sender} (${new Date(m.timestamp).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })})`}
+                message={m.message}
+                color={m.color}
+                isMine={m.sender === 'Moi'} // 💥 ajouté
+              />              
               ))}
             </div>
           </div>
@@ -241,6 +242,7 @@ const ChatPage: React.FC = () => {
                     })})`}
                     message={m.message}
                     color={m.color}
+                    isMine={m.sender === currentUsername} 
                   />
                 )}
               </div>

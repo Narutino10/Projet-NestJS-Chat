@@ -1,23 +1,20 @@
 .message-bubble {
+  display: flex;
+  margin: 5px;
+}
+
+.message-bubble.mine {
+  justify-content: flex-end;
+}
+
+.message-bubble.theirs {
+  justify-content: flex-start;
+}
+
+.bubble-content {
+  padding: 10px 15px;
+  border-radius: 15px;
   max-width: 60%;
-  margin: 0.5rem 0;
-  padding: 0.6rem 1rem;
-  border-radius: 12px;
-  background-color: #e0e0e0;
   word-wrap: break-word;
-
-  &.me {
-    background-color: #a8d0e6;
-    align-self: flex-end;
-  }
-
-  .sender {
-    font-size: 0.75rem;
-    font-weight: bold;
-    margin-bottom: 0.3rem;
-  }
-
-  .content {
-    font-size: 0.9rem;
-  }
+  background-color: #e0e0e0;
 }
