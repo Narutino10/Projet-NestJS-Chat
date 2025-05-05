@@ -18,6 +18,6 @@ export class PrivateMessage {
   @CreateDateColumn()
   timestamp: Date;
 
-  @OneToMany(() => Reaction, (reaction) => reaction.message)
+  @OneToMany(() => Reaction, (reaction) => reaction.message, { cascade: true })
   reactions: Reaction[];
 }

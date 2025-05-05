@@ -88,24 +88,47 @@ const ChatPage: React.FC = () => {
     });
 
     newSocket.on('reactionAdded', (data) => {
-      setMessages((prev) =>
-        prev.map((m) => {
-          if (m.id !== data.messageId) return m;
+      if (privateChatUser) {
+        // Mise à jour des messages privés
+        setPrivateMessages((prev) =>
+          prev.map((m) => {
+            if (m.id !== data.messageId) return m;
     
-          const existing = m.reactions.find((r) => r.emoji === data.emoji);
-          const updatedReactions = existing
-            ? m.reactions.map((r) =>
-                r.emoji === data.emoji ? { ...r, count: r.count + 1 } : r
-              )
-            : [...m.reactions, { emoji: data.emoji, count: 1 }];
+            const existing = m.reactions.find((r) => r.emoji === data.emoji);
+            const updatedReactions = existing
+              ? m.reactions.map((r) =>
+                  r.emoji === data.emoji ? { ...r, count: r.count + 1 } : r
+                )
+              : [...m.reactions, { emoji: data.emoji, count: 1 }];
     
-          return {
-            ...m,
-            reactions: updatedReactions,
-          };
-        })
-      );
+            return {
+              ...m,
+              reactions: updatedReactions,
+            };
+          })
+        );
+      } else {
+        // Mise à jour des messages publics
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id !== data.messageId) return m;
+    
+            const existing = m.reactions.find((r) => r.emoji === data.emoji);
+            const updatedReactions = existing
+              ? m.reactions.map((r) =>
+                  r.emoji === data.emoji ? { ...r, count: r.count + 1 } : r
+                )
+              : [...m.reactions, { emoji: data.emoji, count: 1 }];
+    
+            return {
+              ...m,
+              reactions: updatedReactions,
+            };
+          })
+        );
+      }
     });
+    
     
 
     newSocket.on('privateMessage', (msg: any) => {

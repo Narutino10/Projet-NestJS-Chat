@@ -10,7 +10,10 @@ export class Reaction {
   emoji: string;
 
   @Column()
-  username: string; // on stocke le username qui a réagi
+  username: string; 
+
+  @Column({ default: 1 })
+  count: number;
 
   @ManyToOne(() => PrivateMessage, (message) => message.reactions, { onDelete: 'CASCADE' })
   message: PrivateMessage;
