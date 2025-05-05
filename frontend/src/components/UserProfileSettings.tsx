@@ -2,64 +2,32 @@ import React, { useState, useEffect } from 'react';
 import '../styles/UserProfileSettings.scss';
 
 interface UserProfileSettingsProps {
-  currentAvatar: string;
-  currentColor: string;
-  onSave: (avatar: string, color: string) => void;
+  onUpdate: (avatar: string, color: string) => void;
 }
 
-const availableAvatars = [
-  '/avatars/avatar1.png',
-  '/avatars/avatar2.png',
-  '/avatars/avatar3.png',
-  '/avatars/avatar4.png',
-];
+const UserProfileSettings: React.FC<UserProfileSettingsProps> = ({ onUpdate }) => {
+  const [avatar, setAvatar] = useState('');
+  const [color, setColor] = useState('#7289da');
 
-const UserProfileSettings: React.FC<UserProfileSettingsProps> = ({
-  currentAvatar,
-  currentColor,
-  onSave,
-}) => {
-  const [selectedAvatar, setSelectedAvatar] = useState(currentAvatar);
-  const [selectedColor, setSelectedColor] = useState(currentColor);
-
-  useEffect(() => {
-    setSelectedAvatar(currentAvatar);
-    setSelectedColor(currentColor);
-  }, [currentAvatar, currentColor]);
-
-  const handleSave = () => {
-    onSave(selectedAvatar, selectedColor);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdate(avatar, color);
   };
 
   return (
-    <div className="user-profile-settings">
-      <h3>Personnalisation de mon profil</h3>
-
-      <div className="section">
-        <h4>Choisir un avatar :</h4>
-        <div className="avatar-selection">
-          {availableAvatars.map((avatar) => (
-            <img
-              key={avatar}
-              src={avatar}
-              alt="avatar"
-              className={selectedAvatar === avatar ? 'selected' : ''}
-              onClick={() => setSelectedAvatar(avatar)}
-            />
-          ))}
+    <div style={{ padding: '10px', border: '1px solid #ccc', marginBottom: '10px' }}>
+      <h4>Personnalisation</h4>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>Avatar (URL): </label>
+          <input type="text" value={avatar} onChange={(e) => setAvatar(e.target.value)} />
         </div>
-      </div>
-
-      <div className="section">
-        <h4>Choisir une couleur :</h4>
-        <input
-          type="color"
-          value={selectedColor}
-          onChange={(e) => setSelectedColor(e.target.value)}
-        />
-      </div>
-
-      <button onClick={handleSave}>Enregistrer</button>
+        <div>
+          <label>Couleur: </label>
+          <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
+        </div>
+        <button type="submit">Mettre à jour</button>
+      </form>
     </div>
   );
 };

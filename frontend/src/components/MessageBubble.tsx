@@ -6,14 +6,17 @@ interface MessageBubbleProps {
   message: string;
   color: string;
   isMine: boolean;
+  avatar?: string;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ sender, message, color, isMine }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({ sender, message, color, isMine, avatar }) => {
   return (
     <div className={`message-bubble ${isMine ? 'mine' : 'theirs'}`}>
-      <div className="bubble-content" style={{ backgroundColor: isMine ? '#d6b4fc' : '#e0e0e0' }}>
+      {!isMine && avatar && <img src={avatar} alt="avatar" className="avatar" />}
+      <div className="bubble-content" style={{ backgroundColor: color }}>
         <strong>{sender} :</strong> <span>{message}</span>
       </div>
+      {isMine && avatar && <img src={avatar} alt="avatar" className="avatar" />}
     </div>
   );
 };

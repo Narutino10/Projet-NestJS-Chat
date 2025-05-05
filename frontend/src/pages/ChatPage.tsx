@@ -30,13 +30,12 @@ const ChatPage: React.FC = () => {
   const [privateMessages, setPrivateMessages] = useState<Message[]>([]);
   const [unreadPrivateMessages, setUnreadPrivateMessages] = useState<{ [username: string]: number }>({});
 
+  const [avatar, setAvatar] = useState<string>('');
+  const [bubbleColor, setBubbleColor] = useState<string>('#7289da');
+  const [pageColor, setPageColor] = useState<string>('#fafafa');
+
   const token = localStorage.getItem('token');
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
-
-  // 🔧 nouveaux états pour la personnalisation :
-  const [showSettings, setShowSettings] = useState(false);
-  const [userAvatar, setUserAvatar] = useState('/avatars/avatar1.png');
-  const [userColor, setUserColor] = useState('#800080'); // violet par défaut
 
   useEffect(() => {
     if (token) {
@@ -129,32 +128,30 @@ const ChatPage: React.FC = () => {
       if (!socket) return;
 
       if (privateChatUser) {
-        console.log(`✉️ Envoi message privé à ${privateChatUser}`);
         socket.emit('privateMessage', {
           receiverUsername: privateChatUser,
           message: msg,
-          color: userColor, // 👉 utilise la couleur choisie
+          color: bubbleColor,
         });
         setPrivateMessages((prev) => [
           ...prev,
           {
             sender: 'Moi',
             message: msg,
-            color: userColor,
+            color: bubbleColor,
             timestamp: new Date().toISOString(),
           },
         ]);
       } else {
-        console.log('✉️ Envoi message public :', msg);
         socket.emit('message', {
           room,
           message: msg,
-          color: userColor, // 👉 utilise la couleur choisie
+          color: bubbleColor,
           timestamp: new Date().toISOString(),
         });
       }
     },
-    [socket, privateChatUser, room, userColor],
+    [socket, privateChatUser, room, bubbleColor],
   );
 
   const handleTyping = () => {
@@ -174,7 +171,6 @@ const ChatPage: React.FC = () => {
   };
 
   const handleSendPrivate = (username: string) => {
-    console.log(`🔒 Ouverture du DM avec ${username}`);
     setPrivateChatUser(username);
     setPrivateMessages([]);
     setUnreadPrivateMessages((prev) => ({
@@ -184,47 +180,34 @@ const ChatPage: React.FC = () => {
 
     if (socket) {
       socket.emit('getPrivateHistory', { withUser: username });
-
       socket.once('privateHistory', (messages: any[]) => {
-        console.log('📜 Historique des messages privés reçu :', messages);
         setPrivateMessages(messages.map((msg) => ({
           sender: msg.sender === currentUsername ? 'Moi' : msg.sender,
           message: msg.message,
-          color: msg.sender === currentUsername ? userColor : 'gray',
+          color: msg.sender === currentUsername ? bubbleColor : 'gray',
           timestamp: msg.timestamp,
         })));
       });
     }
   };
 
-  const handleSaveProfile = (avatar: string, color: string) => {
-    setUserAvatar(avatar);
-    setUserColor(color);
-    setShowSettings(false);
+  const handleProfileUpdate = (newAvatar: string, newColor: string) => {
+    setAvatar(newAvatar);
+    setBubbleColor(newColor);
+    setPageColor(newColor + '33'); // light background (e.g., #7289da33)
   };
 
   return (
-    <div className="chat-page">
+    <div className="chat-page" style={{ backgroundColor: pageColor }}>
       <div className="sidebar">
+        <UserProfileSettings onUpdate={handleProfileUpdate} />
+
         <h3>Choisir une room</h3>
         <select value={room} onChange={handleRoomChange}>
           <option value="general">Général</option>
           <option value="sport">Sport</option>
           <option value="musique">Musique</option>
         </select>
-
-        <button onClick={() => setShowSettings(!showSettings)}>
-          {showSettings ? 'Fermer les paramètres' : 'Personnaliser mon profil'}
-        </button>
-
-        {showSettings && (
-          <UserProfileSettings
-            currentAvatar={userAvatar}
-            currentColor={userColor}
-            onSave={handleSaveProfile}
-          />
-        )}
-
         <UserList
           users={users}
           onSendPrivate={handleSendPrivate}
@@ -248,6 +231,7 @@ const ChatPage: React.FC = () => {
                   message={m.message}
                   color={m.color}
                   isMine={m.sender === 'Moi'}
+                  avatar={avatar}
                 />
               ))}
             </div>
@@ -267,6 +251,7 @@ const ChatPage: React.FC = () => {
                     message={m.message}
                     color={m.color}
                     isMine={m.sender === currentUsername}
+                    avatar={avatar}
                   />
                 )}
               </div>
