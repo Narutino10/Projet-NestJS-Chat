@@ -82,7 +82,15 @@ const ChatPage: React.FC = () => {
         }));
       }
 
-      setPrivateMessages((prev) => [...prev, msg]);
+      // ✅ Évite de doubler les messages envoyés par moi-même
+      if (msg.sender !== currentUsername) {
+        setPrivateMessages((prev) => [...prev, {
+          sender: msg.sender,
+          message: msg.message,
+          color: 'gray',
+          timestamp: msg.timestamp,
+        }]);
+      }
     });
 
     newSocket.on('users', (userList: User[]) => {
@@ -109,7 +117,7 @@ const ChatPage: React.FC = () => {
     return () => {
       newSocket.disconnect();
     };
-  }, [room, privateChatUser, token]);
+  }, [room, privateChatUser, token, currentUsername]);
 
   const handleSend = useCallback(
     (msg: string) => {
@@ -168,12 +176,10 @@ const ChatPage: React.FC = () => {
       ...prev,
       [username]: 0,
     }));
-  
+
     if (socket) {
-      // 💥 AJOUTE CETTE LIGNE :
       socket.emit('getPrivateHistory', { withUser: username });
-  
-      // 💥 ÉCOUTE LA RÉPONSE UNE SEULE FOIS :
+
       socket.once('privateHistory', (messages: any[]) => {
         console.log('📜 Historique des messages privés reçu :', messages);
         setPrivateMessages(messages.map((msg) => ({
@@ -183,10 +189,8 @@ const ChatPage: React.FC = () => {
           timestamp: msg.timestamp,
         })));
       });
-           
     }
   };
-  
 
   return (
     <div className="chat-page">
