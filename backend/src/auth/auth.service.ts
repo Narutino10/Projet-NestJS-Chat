@@ -22,6 +22,7 @@ export class AuthService {
         email: user.email,
         username: user.username,
         color: user.color,
+        avatar: user.avatar,
       };
     }
     return null;

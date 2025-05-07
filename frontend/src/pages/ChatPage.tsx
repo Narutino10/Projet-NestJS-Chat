@@ -88,9 +88,10 @@ const ChatPage: React.FC = () => {
     });
 
     newSocket.on('reactionAdded', (data) => {
-      if (privateChatUser) {
-        // Mise à jour des messages privés
-        setPrivateMessages((prev) =>
+      // On regarde si le message existe côté public
+      const updatedPublic = messages.some((m) => m.id === data.messageId);
+      if (updatedPublic) {
+        setMessages((prev) =>
           prev.map((m) => {
             if (m.id !== data.messageId) return m;
     
@@ -107,9 +108,12 @@ const ChatPage: React.FC = () => {
             };
           })
         );
-      } else {
-        // Mise à jour des messages publics
-        setMessages((prev) =>
+      }
+    
+      // On regarde si le message existe côté privé
+      const updatedPrivate = privateMessages.some((m) => m.id === data.messageId);
+      if (updatedPrivate) {
+        setPrivateMessages((prev) =>
           prev.map((m) => {
             if (m.id !== data.messageId) return m;
     
