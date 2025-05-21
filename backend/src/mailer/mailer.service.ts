@@ -17,7 +17,7 @@ export class MailerService {
   });
 
   async sendPasswordReset(to: string, token: string) {
-    const resetLink = `http://localhost:5173/reset-password/${token}`;
+    const resetLink = `http://localhost:3001/reset-password/${token}`;
     console.log('📧 Envoi du mail à', to);
     console.log('🔗 Lien de reset :', resetLink);
 
