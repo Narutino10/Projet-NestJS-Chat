@@ -1,13 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import * as dotenv from 'dotenv';
+
+dotenv.config(); // Charger les variables depuis .env
 
 @Injectable()
 export class MailerService {
   private transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: 'ibrahim60200@gmail.com',
-      pass: 'anig wilf jknh aoxw',
+      user: process.env.EMAIL_USER, // => ibrahim60200@gmail.com
+      pass: process.env.EMAIL_PASS, // => ton mot de passe d'application
     },
   });
 
@@ -17,10 +20,15 @@ export class MailerService {
     console.log('🔗 Lien de reset :', resetLink);
 
     await this.transporter.sendMail({
-      from: `"Support NestChat" <ibrahim60200@gmail.com>`,
+      from: `"Support NestChat" <${process.env.EMAIL_USER}>`,
       to,
       subject: '🔐 Réinitialisation du mot de passe',
-      html: `<p>Clique ici : <a href="${resetLink}">${resetLink}</a></p>`,
+      html: `
+        <h3>Réinitialisation du mot de passe</h3>
+        <p>Tu as demandé à réinitialiser ton mot de passe.</p>
+        <p><a href="${resetLink}">Clique ici pour réinitialiser ton mot de passe</a></p>
+        <p>Ce lien est valable 15 minutes.</p>
+      `,
     });
   }
 }
