@@ -26,4 +26,24 @@ export class AuthController {
 
     return this.authService.login(user);
   }
+
+  @Post('forgot-password')
+  async sendResetEmail(@Body('email') email: string) {
+    try {
+      await this.usersService.generateResetToken(email);
+      return { message: 'Email de réinitialisation envoyé' };
+    } catch (error) {
+      return { error: error.message || 'Erreur inconnue' };
+    }
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() body: { token: string; newPassword: string }) {
+    try {
+      await this.usersService.resetPassword(body.token, body.newPassword);
+      return { message: 'Mot de passe mis à jour' };
+    } catch (error) {
+      return { error: error.message || 'Échec de la mise à jour du mot de passe' };
+    }
+  }
 }

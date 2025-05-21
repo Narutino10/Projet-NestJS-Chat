@@ -4,6 +4,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { User } from './users/user.entity';
 import { ChatModule } from './chat/chat.module';
+import { MailerService } from './mailer/mailer.service';
 
 @Module({
   imports: [
@@ -22,5 +23,6 @@ import { ChatModule } from './chat/chat.module';
     AuthModule,
     ChatModule,
   ],
+  providers: [MailerService],
 })
 export class AppModule {}

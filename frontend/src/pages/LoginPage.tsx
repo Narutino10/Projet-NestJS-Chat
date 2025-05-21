@@ -55,6 +55,12 @@ const LoginPage: React.FC = () => {
           required
         />
         <button type="submit">Se connecter</button>
+        <p className='forgot-password'>
+          Pas encore de compte ? <a href="/register">Inscrivez-vous</a>
+        </p>
+        <p className='forgot-password'>
+          Mot de passe oublié ? <a href="/reset-password">Réinitialiser</a>
+        </p>
       </form>
     </div>
   );

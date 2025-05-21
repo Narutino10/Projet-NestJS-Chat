@@ -19,4 +19,10 @@ export class User {
 
   @Column({ nullable: true })
   color: string;
+
+  @Column({ nullable: true })
+  resetToken?: string;
+  
+  @Column({ nullable: true, type: 'timestamp' })
+  resetTokenExpires?: Date;
 }

@@ -6,10 +6,12 @@ const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
 
     const res = await fetch('http://localhost:3000/auth/register', {
       method: 'POST',
@@ -21,7 +23,8 @@ const RegisterPage: React.FC = () => {
       alert('Compte créé avec succès ! Connecte-toi.');
       navigate('/login');
     } else {
-      alert('Erreur lors de la création du compte.');
+      const data = await res.json();
+      setError(data.message || 'Erreur lors de la création du compte.');
     }
   };
 
@@ -50,6 +53,7 @@ const RegisterPage: React.FC = () => {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
+        {error && <div className="error">{error}</div>}
         <button type="submit">Créer un compte</button>
       </form>
       <p>
