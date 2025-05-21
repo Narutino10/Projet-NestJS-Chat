@@ -55,8 +55,8 @@ Ce projet est une application web développée avec **NestJS** (backend) et **Re
 
 1️⃣ **Cloner le repo :**
 ```bash
-git clone https://github.com/tonuser/ton-repo.git
-cd ton-repo
+git clone https://github.com/Narutino10/Projet-NestJS-Chat
+cd Projet-NestJS-Chat
 ````
 
 2️⃣ **Installer les dépendances backend :**
