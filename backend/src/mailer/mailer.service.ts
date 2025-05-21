@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import * as dotenv from 'dotenv';
 
-dotenv.config(); // Charger les variables depuis .env
+dotenv.config(); 
 
 @Injectable()
 export class MailerService {
   private transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER, // => ibrahim60200@gmail.com
       pass: process.env.EMAIL_PASS, // => ton mot de passe d'application
