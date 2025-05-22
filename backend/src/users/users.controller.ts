@@ -1,10 +1,18 @@
 import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from './users.service';
+import { Request as ExpressRequest } from 'express';
+
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me')
+  getProfile(@Request() req: ExpressRequest) {
+    return req.user;
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post('update-profile')
