@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import '../styles/UserProfileSettings.scss';
 
 interface UserProfileSettingsProps {
@@ -9,8 +9,19 @@ const UserProfileSettings: React.FC<UserProfileSettingsProps> = ({ onUpdate }) =
   const [avatar, setAvatar] = useState('avatar1.png');
   const [color, setColor] = useState('#7289da');
 
+  // ⬇️ Récupérer les infos depuis localStorage au chargement
+  useEffect(() => {
+    const storedAvatar = localStorage.getItem('avatar');
+    const storedColor = localStorage.getItem('color');
+
+    if (storedAvatar) setAvatar(storedAvatar);
+    if (storedColor) setColor(storedColor);
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    localStorage.setItem('avatar', avatar);
+    localStorage.setItem('color', color);
     onUpdate(avatar, color);
   };
 

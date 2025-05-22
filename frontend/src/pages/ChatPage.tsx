@@ -45,20 +45,39 @@ const ChatPage: React.FC = () => {
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
 
   useEffect(() => {
-    if (token) {
-      try {
-        const payloadBase64 = token.split('.')[1];
-        const decodedPayload = JSON.parse(atob(payloadBase64));
-        setCurrentUsername(decodedPayload.username);
-      } catch (error) {
-        console.error('Erreur lors du décodage du token:', error);
-        navigate('/login');
-      }
-    } else {
-      alert('Vous devez vous connecter d’abord.');
+  const storedColor = localStorage.getItem('color');
+  const storedAvatar = localStorage.getItem('avatar');
+
+  if (storedColor) setBubbleColor(storedColor);
+  if (storedAvatar) setAvatar(storedAvatar);
+
+  if (token) {
+    try {
+      const payloadBase64 = token.split('.')[1];
+      const decodedPayload = JSON.parse(atob(payloadBase64));
+      setCurrentUsername(decodedPayload.username);
+
+      // 🔥 Ajoute ces lignes pour récupérer depuis le JWT
+      const jwtColor = decodedPayload.color || '#7289da';
+      const jwtAvatar = decodedPayload.avatar || 'avatar1.png';
+      setBubbleColor(jwtColor);
+      setAvatar(jwtAvatar);
+      setPageColor(jwtColor + '33');
+      document.documentElement.style.setProperty('--user-color', jwtColor);
+
+      // Et stocker dans localStorage
+      localStorage.setItem('color', jwtColor);
+      localStorage.setItem('avatar', jwtAvatar);
+    } catch (error) {
+      console.error('Erreur lors du décodage du token:', error);
       navigate('/login');
     }
-  }, [navigate, token]);
+  } else {
+    alert('Vous devez vous connecter d’abord.');
+    navigate('/login');
+  }
+}, [navigate, token]);
+
 
   const playNotificationSound = () => {
     const audio = new Audio('/notification.mp3');
@@ -248,13 +267,32 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const handleProfileUpdate = (newAvatar: string, newColor: string) => {
-    setAvatar(newAvatar);
-    setBubbleColor(newColor);
-    setPageColor(newColor + '33');
+  const handleProfileUpdate = async (newAvatar: string, newColor: string) => {
+  setAvatar(newAvatar);
+  setBubbleColor(newColor);
+  setPageColor(newColor + '33');
+  document.documentElement.style.setProperty('--user-color', newColor);
 
-    document.documentElement.style.setProperty('--user-color', newColor);
-  };
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  try {
+    await fetch('http://localhost:3000/users/update-profile', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        avatar: newAvatar,
+        color: newColor,
+      }),
+    });
+  } catch (error) {
+    console.error('Erreur lors de la sauvegarde du profil :', error);
+  }
+};
+
 
   return (
     <div className="chat-page" style={{ backgroundColor: pageColor }}>

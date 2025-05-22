@@ -20,11 +20,17 @@ export class AuthController {
   @Post('login')
   async login(
     @Body() body: { email: string; password: string },
-  ): Promise<{ access_token: string }> {
+  ): Promise<{ access_token: string; color: string; avatar: string; username: string }> {
     const user = await this.authService.validateUser(body.email, body.password);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    return this.authService.login(user);
+    const token = this.authService.generateToken(user);
+    return {
+      access_token: token,
+      color: user.color || '#7289da',
+      avatar: user.avatar || 'avatar1.png',
+      username: user.username,
+    };
   }
 
   @Post('forgot-password')
