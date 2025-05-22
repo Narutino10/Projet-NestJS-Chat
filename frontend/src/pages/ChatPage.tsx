@@ -252,6 +252,8 @@ const ChatPage: React.FC = () => {
     setAvatar(newAvatar);
     setBubbleColor(newColor);
     setPageColor(newColor + '33');
+
+    document.documentElement.style.setProperty('--user-color', newColor);
   };
 
   return (
