@@ -1,5 +1,4 @@
-
-# Projet Nest Chat Websocket
+# 💬 Projet NestJS Chat WebSocket
 
 **Ibrahim OUAHABI – 5IW3 ESGI**
 
@@ -7,90 +6,100 @@
 
 ## 📚 Description
 
-Ce projet est une application web développée avec **NestJS** (backend) et **React + TypeScript** (frontend), permettant aux utilisateurs de :  
-✅ Créer un compte et se connecter  
-✅ Accéder à un chat en temps réel via WebSocket  
-✅ Modifier les options de leur profil, notamment choisir une couleur personnalisée  
-✅ Voir la couleur personnalisée des autres utilisateurs dans le chat
+Ce projet est une application web de chat en temps réel développée avec **NestJS** pour le backend et **React + TypeScript** pour le frontend.
+
+Fonctionnalités principales :
+- ✅ Création de compte et authentification (JWT)
+- ✅ Connexion à un chat en temps réel via WebSocket
+- ✅ Envoi de messages publics et privés (DM)
+- ✅ Réactions aux messages (❤️ 👍 😂)
+- ✅ Modification du profil : avatar + couleur personnalisée
+- ✅ Sauvegarde des préférences (couleur, avatar) en base de données
+- ✅ Système de réinitialisation du mot de passe avec envoi d’email (token + expiration)
 
 ---
 
-## 📦 Technologies
+## ⚙️ Technologies utilisées
 
-- **Backend :** NestJS, WebSocket, TypeScript, JWT Auth  
-- **Frontend :** React, TypeScript, WebSocket Client, Styled Components (ou autre, selon choix)  
-- **Base de données :** PostgreSQL (ou SQLite pour dev, selon préférences)
+| Côté | Stack |
+|------|-------|
+| **Frontend** | React, TypeScript, SCSS, WebSocket |
+| **Backend** | NestJS, TypeORM, PostgreSQL, JWT, WebSocket |
+| **Emailing** | Nodemailer (via Gmail App Password) |
+| **Divers** | Docker (PostgreSQL), JWT, Bcrypt |
 
 ---
 
-## 🔧 Structure du projet
+## 📁 Structure du projet
 
 ```
 
-/backend     → API NestJS + WebSocket
-/frontend    → Application React TS
+Projet-NestJS-Chat/
+├── backend/        → API NestJS + WebSocket + Auth + Mailing
+├── frontend/       → App React TypeScript (interface utilisateur)
+└── .env            → Variables sensibles pour l'envoi d'email
+
+```
+
+---
+
+## 🔒 Configuration du backend
+
+Créer un fichier `.env` dans le dossier `backend/` avec ce contenu :
+
+```
+
+EMAIL\_USER=[ton.email@gmail.com](mailto:ton.email@gmail.com)
+EMAIL\_PASS=ton\_mot\_de\_passe\_d\_application
 
 ````
 
----
-
-## 🚀 Objectifs
-
-- Authentification (register + login)
-- Système de chat temps réel
-- Personnalisation du profil (couleur visible par les autres)
-- Code propre, structuré, et documenté
+> 💡 Ces identifiants sont utilisés pour l’envoi de mails (réinitialisation de mot de passe via Gmail).
 
 ---
 
+## 🚀 Lancer le projet en local
 
-## 👤 Auteur
+### 1. Cloner le dépôt
 
-> Ibrahim OUAHABI – 5IW3 ESGI  
-> Projet personnel / pédagogique
-
----
-
-## 💻 Démarrage du projet
-
-1️⃣ **Cloner le repo :**
 ```bash
 git clone https://github.com/Narutino10/Projet-NestJS-Chat
 cd Projet-NestJS-Chat
 ````
 
-2️⃣ **Installer les dépendances backend :**
+### 2. Backend
 
 ```bash
 cd backend
 npm install
+npm run start:dev
 ```
 
-3️⃣ **Installer les dépendances frontend :**
+### 3. Frontend
 
 ```bash
 cd ../frontend
 npm install
-```
-
-4️⃣ **Lancer les serveurs (dev) :**
-
-```bash
-# backend
-npm run start:dev
-
-# frontend (dans un autre terminal)
-npm start
+npm run dev
 ```
 
 ---
 
-## ✨ Notes
+## 👤 Auteur
 
-Ce projet est réalisé pour valider les compétences techniques en :
+**Ibrahim OUAHABI**
 
-* Architecture fullstack (NestJS + React)
-* Communication temps réel via WebSocket
-* Gestion d’utilisateurs et personnalisation
+> Étudiant ESGI 5IW3
+> Projet pédagogique individuel – sans soutenance
 
-```
+---
+
+## ✅ Objectifs du projet
+
+* Authentification complète avec NestJS
+* Chat en temps réel via WebSocket
+* Personnalisation utilisateur persistante (couleur, avatar)
+* Interface claire et responsive en React
+* Intégration d'un système de mot de passe oublié sécurisé
+
+---
