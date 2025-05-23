@@ -45,38 +45,47 @@ const ChatPage: React.FC = () => {
   const [currentUsername, setCurrentUsername] = useState<string | null>(null);
 
   useEffect(() => {
-  const storedColor = localStorage.getItem('color');
-  const storedAvatar = localStorage.getItem('avatar');
-
-  if (storedColor) setBubbleColor(storedColor);
-  if (storedAvatar) setAvatar(storedAvatar);
-
-  if (token) {
-    try {
-      const payloadBase64 = token.split('.')[1];
-      const decodedPayload = JSON.parse(atob(payloadBase64));
-      setCurrentUsername(decodedPayload.username);
-
-      // 🔥 Ajoute ces lignes pour récupérer depuis le JWT
-      const jwtColor = decodedPayload.color || '#7289da';
-      const jwtAvatar = decodedPayload.avatar || 'avatar1.png';
-      setBubbleColor(jwtColor);
-      setAvatar(jwtAvatar);
-      setPageColor(jwtColor + '33');
-      document.documentElement.style.setProperty('--user-color', jwtColor);
-
-      // Et stocker dans localStorage
-      localStorage.setItem('color', jwtColor);
-      localStorage.setItem('avatar', jwtAvatar);
-    } catch (error) {
-      console.error('Erreur lors du décodage du token:', error);
-      navigate('/login');
-    }
-  } else {
+  const token = localStorage.getItem('token');
+  if (!token) {
     alert('Vous devez vous connecter d’abord.');
     navigate('/login');
+    return;
   }
-}, [navigate, token]);
+
+  try {
+    const payloadBase64 = token.split('.')[1];
+    const decodedPayload = JSON.parse(atob(payloadBase64));
+    setCurrentUsername(decodedPayload.username);
+  } catch (error) {
+    console.error('Erreur lors du décodage du token:', error);
+    navigate('/login');
+    return;
+  }
+
+  // ✅ Appel à l'API pour récupérer les préférences à jour
+  fetch('http://localhost:3000/users/me', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => res.json())
+    .then((user) => {
+      const color = user.color || '#7289da';
+      setBubbleColor(color);
+      setPageColor(color + '33');
+      document.documentElement.style.setProperty('--user-color', color);
+
+      if (user.avatar) {
+        setAvatar(user.avatar);
+      }
+    })
+
+    .catch((err) => {
+      console.error('Erreur chargement profil:', err);
+    });
+}, [navigate]);
+
 
 
   const playNotificationSound = () => {

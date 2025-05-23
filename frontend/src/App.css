@@ -1,3 +1,6 @@
+:root {
+  --user-color: #7289da;
+}
 .App {
   text-align: center;
 }

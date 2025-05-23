@@ -50,7 +50,7 @@
       }
 
       button {
-        background-color: var(--user-color, #7289da);
+        background-color: var(--user-color);
         color: white;
         border: none;
         border-radius: 4px;
@@ -59,7 +59,7 @@
         font-size: 0.85rem;
 
         &:hover {
-          background-color: #5b6eae;
+          filter: brightness(0.9);
         }
 
         &:disabled {
